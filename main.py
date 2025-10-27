@@ -1,9 +1,14 @@
-# At the very top of your bot's main file (e.g., main.py or bot.py)
+# main.py
+
 import os
 import threading
 from flask import Flask
+import discord
+from discord.ext import commands
+from typing import Optional
+from datetime import timedelta
 
-# ---- Flask setup ----
+# ------------------- Flask Setup for Uptime -------------------
 app = Flask(__name__)
 
 @app.route("/")
@@ -11,460 +16,325 @@ def home():
     return "Bot is running!"
 
 def run_flask():
-    # Render sets PORT automatically
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
 
-# Start Flask in a separate thread so it doesn’t block your bot
 threading.Thread(target=run_flask).start()
-# ----------------------
+# -------------------------------------------------------------
 
-import os
-import discord
-from discord.ext import commands
-from typing import Optional
-
-# Bot setup with secure token handling
+# ------------------- Discord Bot Setup -----------------------
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True  # Needed for member info
+
 bot = commands.Bot(command_prefix="n/", intents=intents, help_command=None)
 
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
 
+# ------------------- Existing Commands -----------------------
 @bot.command()
 async def help(ctx):
-    """Shows all available commands."""
     embed = discord.Embed(
         title="🤖 Nexus Bot - Command List",
-        description="Complete list of all available commands",
+        description="Complete list of available commands",
         color=discord.Color.blue()
     )
-    
-    embed.add_field(
-        name="🛡️ Moderation Commands",
-        value=(
-            "`n/kick @user <reason>` - Kick a member\n"
-            "`n/ban @user <reason>` - Ban a member\n"
-            "`n/unban <user_id> <reason>` - Unban a user\n"
-            "`n/timeout @user <minutes> <reason>` - Timeout a member\n"
-            "`n/warn @user <reason>` - Warn a member\n"
-            "`n/mute @user <reason>` - Mute a member\n"
-            "`n/unmute @user` - Unmute a member\n"
-            "`n/clear <amount>` - Delete messages (1-100)"
-        ),
-        inline=False
-    )
-    
-    embed.add_field(
-        name="🔧 Channel Management",
-        value=(
-            "`n/slowmode <seconds>` - Set slowmode (0-21600s)\n"
-            "`n/lock` - Lock the channel\n"
-            "`n/unlock` - Unlock the channel"
-        ),
-        inline=False
-    )
-    
-    embed.add_field(
-        name="👥 Role Management",
-        value=(
-            "`n/addrole @user @role` - Add a role to a user\n"
-            "`n/removerole @user @role` - Remove a role from a user"
-        ),
-        inline=False
-    )
-    
-    embed.add_field(
-        name="📊 Information Commands",
-        value=(
-            "`n/userinfo [@user]` - Show user information\n"
-            "`n/serverinfo` - Show server information\n"
-            "`n/avatar [@user]` - Show user's avatar\n"
-            "`n/ping` - Check bot latency"
-        ),
-        inline=False
-    )
-    
-    embed.add_field(
-        name="🎉 Fun & Utility",
-        value=(
-            "`n/say <message>` - Make the bot say something\n"
-            '`n/poll "question" option1 option2...` - Create a poll\n'
-            "`n/announce <message>` - Send an announcement"
-        ),
-        inline=False
-    )
-    
-    embed.add_field(
-        name="ℹ️ Other",
-        value="`n/help` - Show this message",
-        inline=False
-    )
-    
+    embed.add_field(name="🛡️ Moderation", value=(
+        "`n/kick @user <reason>`\n"
+        "`n/ban @user <reason>`\n"
+        "`n/unban <user_id> <reason>`\n"
+        "`n/timeout @user <minutes> <reason>`\n"
+        "`n/warn @user <reason>`\n"
+        "`n/mute @user <reason>`\n"
+        "`n/unmute @user`\n"
+        "`n/clear <amount>`"
+    ), inline=False)
+    embed.add_field(name="🔧 Channel", value=(
+        "`n/slowmode <seconds>`\n"
+        "`n/lock`\n"
+        "`n/unlock`"
+    ), inline=False)
+    embed.add_field(name="👥 Roles", value=(
+        "`n/addrole @user @role`\n"
+        "`n/removerole @user @role`"
+    ), inline=False)
+    embed.add_field(name="📊 Info", value=(
+        "`n/userinfo [@user]`\n"
+        "`n/serverinfo`\n"
+        "`n/avatar [@user]`\n"
+        "`n/ping`"
+    ), inline=False)
+    embed.add_field(name="🎉 Fun & Utility", value=(
+        "`n/say <message>`\n"
+        '`n/poll "question" option1 option2...`\n'
+        "`n/announce <message>`"
+    ), inline=False)
+    embed.add_field(name="ℹ️ Other", value="`n/help` - Show this message", inline=False)
     embed.set_footer(text="Nexus Bot | Your Complete Moderation Solution")
-    
-    await ctx.send(embed=embed)
-
-@bot.command()
-async def say(ctx, *, message: str):
-    """Bot repeats the message you type after the command."""
-    try:
-        await ctx.message.delete()
-    except discord.Forbidden:
-        pass
-    await ctx.send(message)
-
-@bot.command()
-async def kick(ctx, member: discord.Member, *, reason=None):
-    """Kicks a member from the server."""
-    if not ctx.author.guild_permissions.kick_members:
-        await ctx.send("❌ You don't have permission to kick members!")
-        return
-    
-    try:
-        await member.kick(reason=reason)
-        await ctx.send(f"✅ {member.mention} has been kicked. Reason: {reason or 'No reason provided'}")
-    except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to kick this member!")
-    except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
-
-@bot.command()
-async def ban(ctx, member: discord.Member, *, reason=None):
-    """Bans a member from the server."""
-    if not ctx.author.guild_permissions.ban_members:
-        await ctx.send("❌ You don't have permission to ban members!")
-        return
-    
-    try:
-        await member.ban(reason=reason)
-        await ctx.send(f"✅ {member.mention} has been banned. Reason: {reason or 'No reason provided'}")
-    except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to ban this member!")
-    except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
-
-@bot.command()
-async def timeout(ctx, member: discord.Member, duration: int, *, reason=None):
-    """Times out a member for a specified number of minutes."""
-    if not ctx.author.guild_permissions.moderate_members:
-        await ctx.send("❌ You don't have permission to timeout members!")
-        return
-    
-    try:
-        from datetime import timedelta
-        timeout_duration = timedelta(minutes=duration)
-        await member.timeout(timeout_duration, reason=reason)
-        await ctx.send(f"✅ {member.mention} has been timed out for {duration} minutes. Reason: {reason or 'No reason provided'}")
-    except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to timeout this member!")
-    except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
-
-@bot.command()
-async def unban(ctx, user_id: int, *, reason=None):
-    """Unbans a user by their ID."""
-    if not ctx.author.guild_permissions.ban_members:
-        await ctx.send("❌ You don't have permission to unban members!")
-        return
-    
-    try:
-        user = await bot.fetch_user(user_id)
-        await ctx.guild.unban(user, reason=reason)
-        await ctx.send(f"✅ {user.name} has been unbanned. Reason: {reason or 'No reason provided'}")
-    except discord.NotFound:
-        await ctx.send("❌ User not found or not banned!")
-    except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to unban users!")
-    except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
-
-@bot.command()
-async def warn(ctx, member: discord.Member, *, reason=None):
-    """Warns a member."""
-    if not ctx.author.guild_permissions.moderate_members:
-        await ctx.send("❌ You don't have permission to warn members!")
-        return
-    
-    try:
-        embed = discord.Embed(
-            title="⚠️ Warning",
-            description=f"{member.mention} has been warned!",
-            color=discord.Color.orange()
-        )
-        embed.add_field(name="Reason", value=reason or "No reason provided", inline=False)
-        embed.add_field(name="Warned by", value=ctx.author.mention, inline=False)
-        await ctx.send(embed=embed)
-        
-        try:
-            await member.send(f"⚠️ You have been warned in {ctx.guild.name}. Reason: {reason or 'No reason provided'}")
-        except discord.Forbidden:
-            await ctx.send("⚠️ Warning issued, but I couldn't DM the user.")
-    except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
-
-@bot.command()
-async def clear(ctx, amount: int):
-    """Deletes a specified number of messages."""
-    if not ctx.author.guild_permissions.manage_messages:
-        await ctx.send("❌ You don't have permission to manage messages!")
-        return
-    
-    if amount < 1 or amount > 100:
-        await ctx.send("❌ Please specify a number between 1 and 100!")
-        return
-    
-    try:
-        deleted = await ctx.channel.purge(limit=amount + 1)
-        msg = await ctx.send(f"✅ Deleted {len(deleted) - 1} messages!")
-        await msg.delete(delay=3)
-    except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to delete messages!")
-    except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
-
-@bot.command()
-async def mute(ctx, member: discord.Member, *, reason=None):
-    """Mutes a member indefinitely (timeout for 28 days)."""
-    if not ctx.author.guild_permissions.moderate_members:
-        await ctx.send("❌ You don't have permission to mute members!")
-        return
-    
-    try:
-        from datetime import timedelta
-        await member.timeout(timedelta(days=28), reason=reason)
-        await ctx.send(f"🔇 {member.mention} has been muted. Reason: {reason or 'No reason provided'}")
-    except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to mute this member!")
-    except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
-
-@bot.command()
-async def unmute(ctx, member: discord.Member):
-    """Unmutes a member."""
-    if not ctx.author.guild_permissions.moderate_members:
-        await ctx.send("❌ You don't have permission to unmute members!")
-        return
-    
-    try:
-        await member.timeout(None)
-        await ctx.send(f"🔊 {member.mention} has been unmuted!")
-    except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to unmute this member!")
-    except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
-
-@bot.command()
-async def slowmode(ctx, seconds: int):
-    """Sets slowmode for the current channel."""
-    if not ctx.author.guild_permissions.manage_channels:
-        await ctx.send("❌ You don't have permission to manage channels!")
-        return
-    
-    if seconds < 0 or seconds > 21600:
-        await ctx.send("❌ Slowmode must be between 0 and 21600 seconds (6 hours)!")
-        return
-    
-    try:
-        await ctx.channel.edit(slowmode_delay=seconds)
-        if seconds == 0:
-            await ctx.send("✅ Slowmode disabled!")
-        else:
-            await ctx.send(f"✅ Slowmode set to {seconds} seconds!")
-    except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to edit this channel!")
-    except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
-
-@bot.command()
-async def lock(ctx):
-    """Locks the current channel."""
-    if not ctx.author.guild_permissions.manage_channels:
-        await ctx.send("❌ You don't have permission to manage channels!")
-        return
-    
-    try:
-        await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=False)
-        await ctx.send("🔒 Channel locked!")
-    except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to edit this channel!")
-    except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
-
-@bot.command()
-async def unlock(ctx):
-    """Unlocks the current channel."""
-    if not ctx.author.guild_permissions.manage_channels:
-        await ctx.send("❌ You don't have permission to manage channels!")
-        return
-    
-    try:
-        await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=None)
-        await ctx.send("🔓 Channel unlocked!")
-    except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to edit this channel!")
-    except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
-
-@bot.command()
-async def userinfo(ctx, member: Optional[discord.Member] = None):
-    """Shows information about a user."""
-    member = member or ctx.author
-    
-    embed = discord.Embed(
-        title=f"User Info - {member}",
-        color=member.color
-    )
-    embed.set_thumbnail(url=member.display_avatar.url)
-    embed.add_field(name="ID", value=member.id, inline=True)
-    embed.add_field(name="Nickname", value=member.nick or "None", inline=True)
-    embed.add_field(name="Account Created", value=member.created_at.strftime("%Y-%m-%d"), inline=True)
-    embed.add_field(name="Joined Server", value=member.joined_at.strftime("%Y-%m-%d") if member.joined_at else "Unknown", inline=True)
-    embed.add_field(name="Roles", value=", ".join([role.mention for role in member.roles[1:]]) or "None", inline=False)
-    
-    await ctx.send(embed=embed)
-
-@bot.command()
-async def serverinfo(ctx):
-    """Shows information about the server."""
-    guild = ctx.guild
-    
-    embed = discord.Embed(
-        title=f"Server Info - {guild.name}",
-        color=discord.Color.blue()
-    )
-    if guild.icon:
-        embed.set_thumbnail(url=guild.icon.url)
-    
-    embed.add_field(name="Server ID", value=guild.id, inline=True)
-    embed.add_field(name="Owner", value=guild.owner.mention if guild.owner else "Unknown", inline=True)
-    embed.add_field(name="Created", value=guild.created_at.strftime("%Y-%m-%d"), inline=True)
-    embed.add_field(name="Members", value=guild.member_count, inline=True)
-    embed.add_field(name="Channels", value=len(guild.channels), inline=True)
-    embed.add_field(name="Roles", value=len(guild.roles), inline=True)
-    
-    await ctx.send(embed=embed)
-
-@bot.command()
-async def avatar(ctx, member: Optional[discord.Member] = None):
-    """Shows a user's avatar."""
-    member = member or ctx.author
-    
-    embed = discord.Embed(
-        title=f"{member.name}'s Avatar",
-        color=discord.Color.blue()
-    )
-    embed.set_image(url=member.display_avatar.url)
-    
     await ctx.send(embed=embed)
 
 @bot.command()
 async def ping(ctx):
-    """Shows the bot's latency."""
-    latency = round(bot.latency * 1000)
-    await ctx.send(f"🏓 Pong! Latency: {latency}ms")
+    await ctx.send(f"🏓 Pong! Latency: {round(bot.latency*1000)}ms")
+
+@bot.command()
+async def say(ctx, *, message: str):
+    try: await ctx.message.delete()
+    except: pass
+    await ctx.send(message)
+
+# Moderation Commands
+@bot.command()
+async def kick(ctx, member: discord.Member, *, reason=None):
+    if not ctx.author.guild_permissions.kick_members:
+        return await ctx.send("❌ You don't have permission to kick members!")
+    try:
+        await member.kick(reason=reason)
+        await ctx.send(f"✅ {member.mention} has been kicked. Reason: {reason or 'No reason provided'}")
+    except Exception as e:
+        await ctx.send(f"❌ Error: {e}")
+
+@bot.command()
+async def ban(ctx, member: discord.Member, *, reason=None):
+    if not ctx.author.guild_permissions.ban_members:
+        return await ctx.send("❌ You don't have permission to ban members!")
+    try:
+        await member.ban(reason=reason)
+        await ctx.send(f"✅ {member.mention} has been banned. Reason: {reason or 'No reason provided'}")
+    except Exception as e:
+        await ctx.send(f"❌ Error: {e}")
+
+@bot.command()
+async def timeout(ctx, member: discord.Member, duration: int, *, reason=None):
+    if not ctx.author.guild_permissions.moderate_members:
+        return await ctx.send("❌ You don't have permission to timeout members!")
+    try:
+        await member.timeout(timedelta(minutes=duration), reason=reason)
+        await ctx.send(f"✅ {member.mention} timed out for {duration} minutes.")
+    except Exception as e:
+        await ctx.send(f"❌ Error: {e}")
+
+@bot.command()
+async def unban(ctx, user_id: int, *, reason=None):
+    if not ctx.author.guild_permissions.ban_members:
+        return await ctx.send("❌ You don't have permission to unban members!")
+    try:
+        user = await bot.fetch_user(user_id)
+        await ctx.guild.unban(user, reason=reason)
+        await ctx.send(f"✅ {user.name} has been unbanned.")
+    except Exception as e:
+        await ctx.send(f"❌ Error: {e}")
+
+@bot.command()
+async def warn(ctx, member: discord.Member, *, reason=None):
+    if not ctx.author.guild_permissions.moderate_members:
+        return await ctx.send("❌ You can't warn members!")
+    embed = discord.Embed(title="⚠️ Warning", description=f"{member.mention} has been warned!", color=discord.Color.orange())
+    embed.add_field(name="Reason", value=reason or "No reason provided")
+    embed.add_field(name="Warned by", value=ctx.author.mention)
+    await ctx.send(embed=embed)
+    try: await member.send(f"⚠️ You have been warned in {ctx.guild.name}. Reason: {reason or 'No reason provided'}")
+    except: await ctx.send("⚠️ Warning issued, but couldn't DM the user.")
+
+@bot.command()
+async def clear(ctx, amount: int):
+    if not ctx.author.guild_permissions.manage_messages:
+        return await ctx.send("❌ You don't have permission to delete messages!")
+    if amount < 1 or amount > 100:
+        return await ctx.send("❌ Amount must be between 1-100")
+    deleted = await ctx.channel.purge(limit=amount+1)
+    msg = await ctx.send(f"✅ Deleted {len(deleted)-1} messages!")
+    await msg.delete(delay=3)
+
+@bot.command()
+async def mute(ctx, member: discord.Member, *, reason=None):
+    if not ctx.author.guild_permissions.moderate_members:
+        return await ctx.send("❌ No permission!")
+    try:
+        await member.timeout(timedelta(days=28), reason=reason)
+        await ctx.send(f"🔇 {member.mention} muted.")
+    except Exception as e:
+        await ctx.send(f"❌ Error: {e}")
+
+@bot.command()
+async def unmute(ctx, member: discord.Member):
+    if not ctx.author.guild_permissions.moderate_members:
+        return await ctx.send("❌ No permission!")
+    try:
+        await member.timeout(None)
+        await ctx.send(f"🔊 {member.mention} unmuted!")
+    except Exception as e:
+        await ctx.send(f"❌ Error: {e}")
+
+@bot.command()
+async def slowmode(ctx, seconds: int):
+    if not ctx.author.guild_permissions.manage_channels:
+        return await ctx.send("❌ No permission!")
+    if seconds < 0 or seconds > 21600:
+        return await ctx.send("❌ Slowmode must be 0-21600 seconds")
+    await ctx.channel.edit(slowmode_delay=seconds)
+    await ctx.send(f"✅ Slowmode set to {seconds} seconds!" if seconds else "✅ Slowmode disabled!")
+
+@bot.command()
+async def lock(ctx):
+    if not ctx.author.guild_permissions.manage_channels:
+        return await ctx.send("❌ No permission!")
+    await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=False)
+    await ctx.send("🔒 Channel locked!")
+
+@bot.command()
+async def unlock(ctx):
+    if not ctx.author.guild_permissions.manage_channels:
+        return await ctx.send("❌ No permission!")
+    await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=None)
+    await ctx.send("🔓 Channel unlocked!")
+
+@bot.command()
+async def userinfo(ctx, member: Optional[discord.Member] = None):
+    member = member or ctx.author
+    embed = discord.Embed(title=f"User Info - {member}", color=member.color)
+    embed.set_thumbnail(url=member.display_avatar.url)
+    embed.add_field(name="ID", value=member.id)
+    embed.add_field(name="Nickname", value=member.nick or "None")
+    embed.add_field(name="Account Created", value=member.created_at.strftime("%Y-%m-%d"))
+    embed.add_field(name="Joined Server", value=member.joined_at.strftime("%Y-%m-%d") if member.joined_at else "Unknown")
+    embed.add_field(name="Roles", value=", ".join([role.mention for role in member.roles[1:]]) or "None")
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def serverinfo(ctx):
+    guild = ctx.guild
+    embed = discord.Embed(title=f"Server Info - {guild.name}", color=discord.Color.blue())
+    if guild.icon: embed.set_thumbnail(url=guild.icon.url)
+    embed.add_field(name="Server ID", value=guild.id)
+    embed.add_field(name="Owner", value=guild.owner.mention if guild.owner else "Unknown")
+    embed.add_field(name="Created", value=guild.created_at.strftime("%Y-%m-%d"))
+    embed.add_field(name="Members", value=guild.member_count)
+    embed.add_field(name="Channels", value=len(guild.channels))
+    embed.add_field(name="Roles", value=len(guild.roles))
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def avatar(ctx, member: Optional[discord.Member] = None):
+    member = member or ctx.author
+    embed = discord.Embed(title=f"{member.name}'s Avatar", color=discord.Color.blue())
+    embed.set_image(url=member.display_avatar.url)
+    await ctx.send(embed=embed)
 
 @bot.command()
 async def addrole(ctx, member: discord.Member, role: discord.Role):
-    """Adds a role to a member."""
     if not ctx.author.guild_permissions.manage_roles:
-        await ctx.send("❌ You don't have permission to manage roles!")
-        return
-    
+        return await ctx.send("❌ No permission!")
     try:
         await member.add_roles(role)
         await ctx.send(f"✅ Added {role.mention} to {member.mention}")
-    except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to add this role!")
     except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
+        await ctx.send(f"❌ Error: {e}")
 
 @bot.command()
 async def removerole(ctx, member: discord.Member, role: discord.Role):
-    """Removes a role from a member."""
     if not ctx.author.guild_permissions.manage_roles:
-        await ctx.send("❌ You don't have permission to manage roles!")
-        return
-    
+        return await ctx.send("❌ No permission!")
     try:
         await member.remove_roles(role)
         await ctx.send(f"✅ Removed {role.mention} from {member.mention}")
-    except discord.Forbidden:
-        await ctx.send("❌ I don't have permission to remove this role!")
     except Exception as e:
-        await ctx.send(f"❌ An error occurred: {str(e)}")
+        await ctx.send(f"❌ Error: {e}")
 
 @bot.command()
 async def poll(ctx, question: str, *options):
-    """Creates a poll with reactions. Usage: n/poll "question" option1 option2 ..."""
-    if len(options) < 2:
-        await ctx.send("❌ Please provide at least 2 options!")
-        return
-    
-    if len(options) > 10:
-        await ctx.send("❌ Maximum 10 options allowed!")
-        return
-    
-    reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
-    
-    description = "\n".join([f"{reactions[i]} {option}" for i, option in enumerate(options)])
-    
-    embed = discord.Embed(
-        title=f"📊 {question}",
-        description=description,
-        color=discord.Color.green()
-    )
+    if len(options) < 2: return await ctx.send("❌ Minimum 2 options required")
+    if len(options) > 10: return await ctx.send("❌ Maximum 10 options allowed")
+    reactions = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟']
+    description = "\n".join([f"{reactions[i]} {opt}" for i,opt in enumerate(options)])
+    embed = discord.Embed(title=f"📊 {question}", description=description, color=discord.Color.green())
     embed.set_footer(text=f"Poll by {ctx.author}")
-    
     poll_message = await ctx.send(embed=embed)
-    
-    for i in range(len(options)):
-        await poll_message.add_reaction(reactions[i])
+    for i in range(len(options)): await poll_message.add_reaction(reactions[i])
 
 @bot.command()
 async def announce(ctx, *, message: str):
-    """Sends a formatted announcement."""
     if not ctx.author.guild_permissions.manage_messages:
-        await ctx.send("❌ You don't have permission to make announcements!")
-        return
-    
-    embed = discord.Embed(
-        title="📢 Announcement",
-        description=message,
-        color=discord.Color.gold()
-    )
+        return await ctx.send("❌ No permission!")
+    embed = discord.Embed(title="📢 Announcement", description=message, color=discord.Color.gold())
     embed.set_footer(text=f"Announced by {ctx.author}")
-    
-    try:
-        await ctx.message.delete()
-    except discord.Forbidden:
-        pass
+    try: await ctx.message.delete()
+    except: pass
     await ctx.send(embed=embed)
 
-# Get token from environment variable
-token = os.getenv("BOT_TOKEN") or os.getenv("DISCORD_BOT_TOKEN")
+# ------------------- New Commands -----------------------------
+@bot.command()
+async def hug(ctx, member: discord.Member):
+    await ctx.send(f"🤗 {ctx.author.mention} hugged {member.mention}!")
+
+@bot.command()
+async def kiss(ctx, member: discord.Member):
+    await ctx.send(f"💋 {ctx.author.mention} kissed {member.mention}!")
+
+@bot.command()
+async def flipcoin(ctx):
+    import random
+    result = random.choice(["Heads", "Tails"])
+    await ctx.send(f"🪙 The coin landed on **{result}**!")
+
+@bot.command()
+async def roll(ctx, sides: int = 6):
+    import random
+    if sides < 2: return await ctx.send("❌ Minimum sides is 2")
+    result = random.randint(1, sides)
+    await ctx.send(f"🎲 You rolled a {result} on a {sides}-sided die!")
+
+@bot.command()
+async def inspire(ctx):
+    import requests
+    try:
+        res = requests.get("https://api.quotable.io/random").json()
+        await ctx.send(f"💡 {res['content']} —{res['author']}")
+    except:
+        await ctx.send("❌ Couldn't fetch quote!")
+
+@bot.command()
+async def serverbanner(ctx):
+    if ctx.guild.banner:
+        await ctx.send(ctx.guild.banner.url)
+    else:
+        await ctx.send("❌ This server has no banner.")
+
+@bot.command()
+async def time(ctx):
+    from datetime import datetime
+    await ctx.send(f"⏰ Current UTC time: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}")
+
+@bot.command()
+async def meme(ctx):
+    import requests
+    try:
+        res = requests.get("https://meme-api.com/gimme").json()
+        await ctx.send(res["url"])
+    except:
+        await ctx.send("❌ Couldn't fetch meme!")
+
+@bot.command()
+async def hugall(ctx):
+    await ctx.send(f"🤗 {ctx.author.mention} sends hugs to everyone!")
+
+@bot.command()
+async def joke(ctx):
+    import requests
+    try:
+        res = requests.get("https://v2.jokeapi.dev/joke/Any").json()
+        if res["type"] == "single":
+            await ctx.send(f"😂 {res['joke']}")
+        else:
+            await ctx.send(f"😂 {res['setup']} ... {res['delivery']}")
+    except:
+        await ctx.send("❌ Couldn't fetch joke!")
+
+# ------------------- Run Bot -------------------------------
+token = os.environ.get("DISCORD_TOKEN")
 if not token:
-    print("❌ Error: BOT_TOKEN or DISCORD_BOT_TOKEN environment variable is not set.")
-    print("Please add your Discord bot token to the Secrets.")
-    exit(1)
-
-
-import os
-
-# Try reading the token from multiple possible environment variables
-token = (
-    os.environ.get("DISCORD_TOKEN") or
-    os.environ.get("TOKEN") or
-    os.environ.get("DISCORD_BOT_TOKEN") or
-    os.environ.get("TOKEN_BOT")
-)
-
-# If no token is found, stop and show an error
-if not token:
-    print("❌ Error: No Discord token found in environment variables!")
-    exit(1)
-
-# Run the bot
-bot.run(token)
+    print("❌ Please set your DISCORD_TOKEN environment variable!")
+else:
+    bot.run(token)
