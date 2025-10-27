@@ -429,4 +429,7 @@ if not token:
     print("Please add your Discord bot token to the Secrets.")
     exit(1)
 
-bot.run(token)
+
+import os
+TOKEN = os.getenv("DISCORD_TOKEN")
+bot.run(TOKEN)
