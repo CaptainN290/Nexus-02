@@ -456,3 +456,4 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 bot.run(TOKEN)
 print("Token is:", TOKEN)  # for debugging
 bot.run(TOKEN)
+bot.run(os.environ["DISCORD_TOKEN"])
