@@ -1,3 +1,24 @@
+# At the very top of your bot's main file (e.g., main.py or bot.py)
+import os
+import threading
+from flask import Flask
+
+# ---- Flask setup ----
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Bot is running!"
+
+def run_flask():
+    # Render sets PORT automatically
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+# Start Flask in a separate thread so it doesn’t block your bot
+threading.Thread(target=run_flask).start()
+# ----------------------
+
 import os
 import discord
 from discord.ext import commands
