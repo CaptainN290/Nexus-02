@@ -452,14 +452,19 @@ if not token:
 
 
 import os
-TOKEN = os.getenv("DISCORD_TOKEN")
-bot.run(TOKEN)
-print("Token is:", TOKEN)  # for debugging
-bot.run(TOKEN)
-bot.run(os.environ["DISCORD_TOKEN"])
-bot.run(
+
+# Try reading the token from multiple possible environment variables
+token = (
     os.environ.get("DISCORD_TOKEN") or
     os.environ.get("TOKEN") or
     os.environ.get("DISCORD_BOT_TOKEN") or
     os.environ.get("TOKEN_BOT")
 )
+
+# If no token is found, stop and show an error
+if not token:
+    print("❌ Error: No Discord token found in environment variables!")
+    exit(1)
+
+# Run the bot
+bot.run(token)
