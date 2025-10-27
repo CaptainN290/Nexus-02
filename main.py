@@ -1,3 +1,10 @@
+# ===== Fake audioop for Python 3.13 =====
+import sys
+import types
+
+sys.modules['audioop'] = types.ModuleType('audioop')
+# ========================================
+
 # main.py
 
 import os
