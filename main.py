@@ -172,7 +172,7 @@ async def warn(ctx, member: discord.Member, *, reason=None):
     embed.add_field(name="Warned by", value=ctx.author.mention)
     await ctx.send(embed=embed)
     try:
-        await member.send(f"⚠️ You were warned in {ctx.guild.name}: {reason or 'No reason provided'}")
+        await member.send(f"⚠️ You have been warned in {ctx.guild.name} Reason: {reason or 'No reason provided'}")
     except:
         await ctx.send("⚠️ [Warning sent, but user’s DMs are closed.]")
 
