@@ -45,11 +45,11 @@ async def on_ready():
 async def help(ctx):
     embed = discord.Embed(
         title="**➤ 𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 - 𝐂𝐨𝐦𝐦𝐚𝐧𝐝𝐬 𝐋𝐢𝐬𝐭**",
-        description="List of all working commands",
+        description="• List of all working commands",
         color=discord.Color.blue()
     )
 
-    embed.add_field(name="**➤ ⛊ Moderation**", value=(
+    embed.add_field(name="**⛊ Moderation**", value=(
         "n/kick @user <reason>\n"
         "n/ban @user <reason>\n"
         "n/unban <user_id>\n"
