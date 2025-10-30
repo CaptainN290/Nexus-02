@@ -44,12 +44,12 @@ async def on_ready():
 @bot.command()
 async def help(ctx):
     embed = discord.Embed(
-        title="🤖 Nexus Bot - Command List",
-        description="List of available and working commands",
+        title="**➤ 𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 - 𝐂𝐨𝐦𝐦𝐚𝐧𝐝𝐬 𝐋𝐢𝐬𝐭**",
+        description="List of all working commands",
         color=discord.Color.blue()
     )
 
-    embed.add_field(name="🛡️ Moderation", value=(
+    embed.add_field(name="**➤ ⛊ Moderation**", value=(
         "n/kick @user <reason>\n"
         "n/ban @user <reason>\n"
         "n/unban <user_id>\n"
@@ -61,19 +61,19 @@ async def help(ctx):
         "n/clear <amount>"
     ), inline=False)
 
-    embed.add_field(name="🔧 Channel", value=(
+    embed.add_field(name="**⚙︎ Channel**", value=(
         "n/slowmode <seconds>\n"
         "n/lock\n"
         "n/unlock"
     ), inline=False)
 
-    embed.add_field(name="👥 Roles", value=(
+    embed.add_field(name="**𐀪 Roles**", value=(
         "n/addrole @user @role\n"
         "n/removerole @user @role\n"
         "n/rolecatalog"
     ), inline=False)
 
-    embed.add_field(name="📊 Info", value=(
+    embed.add_field(name="**𝒊 Info**", value=(
         "n/userinfo [@user]\n"
         "n/serverinfo\n"
         "n/serverbanner\n"
@@ -82,7 +82,7 @@ async def help(ctx):
         "n/time"
     ), inline=False)
 
-    embed.add_field(name="🎉 Fun & Utility", value=(
+    embed.add_field(name="**☻ Fun & Utility**", value=(
         "n/say <message>\n"
         "n/poll \"question\" option1 option2...\n"
         "n/announce <message>\n"
@@ -93,7 +93,7 @@ async def help(ctx):
         "n/roll [sides]"
     ), inline=False)
 
-    embed.add_field(name="ℹ️ Other", value="n/help - Show this message", inline=False)
+    embed.add_field(name="**✚ Other**", value="n/help - Show this message", inline=False)
     embed.set_footer(text="Made by @captainn29")
 
     await ctx.send(embed=embed)
