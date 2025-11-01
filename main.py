@@ -13,6 +13,10 @@ from discord.ext import commands
 from datetime import timedelta, datetime
 from typing import Optional
 import random
+import asyncio
+import re
+import aiohttp  # for async web requests
+from datetime import datetime
 
 # ------------------- Flask Setup for Uptime -------------------
 app = Flask(__name__)
@@ -25,7 +29,7 @@ def run_flask():
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
 
-threading.Thread(target=run_flask).start()
+threading.Thread(target=run_flask, daemon=True).start()
 
 # -------------------------------------------------------------
 # ------------------- Discord Bot Setup -----------------------
@@ -34,6 +38,7 @@ intents.message_content = True
 intents.members = True
 
 bot = commands.Bot(command_prefix="n/", intents=intents, help_command=None)
+bot_start_time = datetime.utcnow()
 
 # ------------------- Events -----------------------
 @bot.event
@@ -58,7 +63,7 @@ async def help(ctx):
         "n/mute @user <reason>\n"
         "n/unmute @user\n"
         "n/warn @user <reason>\n"
-        "n/clear <amount>"
+        "n/clear <amount> [images/users] ex: images"
     ), inline=False)
 
     embed.add_field(name="**⚙︎ Channel**", value=(
@@ -80,17 +85,18 @@ async def help(ctx):
         "n/avatar [@user]\n"
         "n/ping\n"
         "n/time"
+        "n/status - Show bot and web service status"
     ), inline=False)
 
     embed.add_field(name="**☻ Fun & Utility**", value=(
         "n/say <message>\n"
-        "n/poll \"question\" option1 option2...\n"
+        "n/poll \"question\" option1 option2 0d 0h"
         "n/announce <message>\n"
         "n/hug @user\n"
         "n/hugall\n"
         "n/kiss @user\n"
         "n/flipcoin\n"
-        "n/roll [sides]"
+        "n/roll [sides] or n/roll XdY"
     ), inline=False)
 
     embed.add_field(name="**✚ Other**", value="n/help - Show this message", inline=False)
@@ -197,14 +203,89 @@ async def unmute(ctx, member: discord.Member):
         await ctx.send(f"**❌ [Error: {e}]**")
 
 @bot.command()
-async def clear(ctx, amount: int):
+async def clear(ctx, amount: int, *args):
     if not ctx.author.guild_permissions.manage_messages:
         return await ctx.send("**❌ [No permission to clear messages!]**")
     if amount < 1 or amount > 100:
         return await ctx.send("**❌ [Amount must be between 1–100]**")
-    deleted = await ctx.channel.purge(limit=amount+1)
-    msg = await ctx.send(f"**✅ [Deleted {len(deleted)-1} messages]**")
-    await msg.delete(delay=3)
+
+    # parse args: mention(s), "images", "ex:" or "ex: images"
+    target_member = None
+    only_images = False
+    exclude_images = False
+
+    # Helper to detect mention like <@!123456>
+    mention_re = re.compile(r"<@!?(?P<id>\d+)>")
+
+    args = list(args)
+
+    i = 0
+    while i < len(args):
+        token = args[i]
+        low = token.lower()
+        # combined ex:images form
+        if low.startswith("ex:") and len(low) > 3:
+            # ex:images or ex:images,
+            rest = low[3:].strip()
+            if rest in ("images", "image", "attachments", "attachment", "imgs"):
+                exclude_images = True
+            i += 1
+            continue
+        if low == "ex:":
+            # check next token for what to exclude
+            if i + 1 < len(args):
+                nxt = args[i+1].lower()
+                if nxt in ("images", "image", "attachments", "attachment", "imgs"):
+                    exclude_images = True
+                    i += 2
+                    continue
+            i += 1
+            continue
+        if low in ("images", "image", "attachments", "attachment", "imgs"):
+            only_images = True
+            i += 1
+            continue
+        # check mention pattern
+        m = mention_re.match(token)
+        if m:
+            uid = int(m.group("id"))
+            mbr = ctx.guild.get_member(uid)
+            if mbr:
+                target_member = mbr
+            i += 1
+            continue
+        # otherwise ignore unknown tokens
+        i += 1
+
+    def check(message):
+        # skip the command message itself
+        if message.id == ctx.message.id:
+            return False
+        if target_member and message.author.id != target_member.id:
+            return False
+        has_attachment = len(message.attachments) > 0
+        if only_images and not has_attachment:
+            return False
+        if exclude_images and has_attachment:
+            return False
+        return True
+
+    try:
+        deleted = await ctx.channel.purge(limit=amount+1, check=check)
+        # adjust count: we excluded the command message
+        deleted_count = len(deleted)
+        # If command message was not included in deleted (because command message didn't match check), we should not subtract; but to keep same style as original, show deleted_count-1 only if command message was deleted.
+        # Simpler and consistent: report deleted_count (number of messages removed)
+        await ctx.send(f"**✅ [Deleted {deleted_count} messages]**")
+        # delete the notice after a short time, matching previous behavior where they deleted after 3 sec
+        await asyncio.sleep(3)
+        # find last message from bot (the deletion notice) and remove it (safe guard)
+        try:
+            await ctx.channel.purge(limit=5, check=lambda m: m.author == bot.user and m.content.startswith("**✅ [Deleted"))
+        except:
+            pass
+    except Exception as e:
+        await ctx.send(f"**❌ [Error: {e}]**")
 
 # ------------------- Channel Commands -----------------------
 @bot.command()
@@ -321,37 +402,199 @@ async def hugall(ctx):
 async def kiss(ctx, member: discord.Member):
     await ctx.send(f"**💋 [{ctx.author.mention} kissed {member.mention}]**")
 
+# ------------------- Status Command -----------------------
+@bot.command()
+async def status(ctx):
+    """Shows bot and web service status with uptime and metrics."""
+    try:
+        # Calculate uptime
+        now = datetime.utcnow()
+        uptime_delta = now - bot_start_time
+        days, remainder = divmod(uptime_delta.total_seconds(), 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, _ = divmod(remainder, 60)
+        uptime_str = f"{int(days)}d {int(hours)}h {int(minutes)}m"
+
+        # Bot metrics
+        latency = round(bot.latency * 1000)
+        guild_count = len(bot.guilds)
+        user_count = sum(g.member_count for g in bot.guilds)
+
+        # Web service check (async)
+        render_url = "https://srv-d3vp4lc9c44c738phojg.onrender.com/"  # your Render URL
+        web_status = "❌ Offline"
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(render_url, timeout=5) as resp:
+                    if resp.status == 200:
+                        web_status = "✅ Online"
+            except:
+                web_status = "❌ Offline"
+
+        # Build embed
+        embed = discord.Embed(
+            title="**🛰️ [Bot Status]**",
+            color=discord.Color.blue()
+        )
+        embed.add_field(name="Uptime", value=f"**[{uptime_str}]**", inline=False)
+        embed.add_field(name="Ping", value=f"**[{latency}ms]**", inline=False)
+        embed.add_field(name="Servers | Users", value=f"**[{guild_count} | {user_count}]**", inline=False)
+        embed.add_field(name="Web Service", value=f"**[{web_status}]**", inline=False)
+        embed.set_footer(text=f"Last Reboot: {bot_start_time.strftime('%Y-%m-%d %H:%M UTC')}")
+
+        await ctx.send(embed=embed)
+
+    except Exception as e:
+        await ctx.send(f"**❌ [Error fetching status: {e}]**")
+
 @bot.command()
 async def flipcoin(ctx):
     result = random.choice(["Heads", "Tails"])
     await ctx.send(f"**🪙 [The coin landed on {result}]**")
 
 @bot.command()
-async def roll(ctx, sides: int = 6):
-    if sides < 2:
-        return await ctx.send("**❌ [Minimum sides is 2]**")
-    result = random.randint(1, sides)
-    await ctx.send(f"**🎲 [You rolled a {result} on a {sides}-sided die]**")
+async def roll(ctx, arg: Optional[str] = None):
+    # Supports both old behaviour (n/roll [sides]) and dice syntax (XdY)
+    try:
+        if arg is None:
+            sides = 6
+            result = random.randint(1, sides)
+            await ctx.send(f"**🎲 [You rolled a {result} on a {sides}-sided die]**")
+            return
+
+        # dice pattern like 2d6
+        dice_match = re.match(r"^(\d+)d(\d+)$", arg.lower().strip())
+        if dice_match:
+            rolls = int(dice_match.group(1))
+            sides = int(dice_match.group(2))
+            if rolls < 1 or sides < 2:
+                return await ctx.send("**❌ [Invalid dice. Example: 2d6]**")
+            if rolls > 50:
+                return await ctx.send("**❌ [Too many dice (max 50)]**")
+            results = [random.randint(1, sides) for _ in range(rolls)]
+            total = sum(results)
+            await ctx.send(f"**🎲 [You rolled {', '.join(map(str, results))} → Total: {total} on {rolls}d{sides}]**")
+            return
+        else:
+            # try parse as single integer for sides
+            try:
+                sides = int(arg)
+                if sides < 2:
+                    return await ctx.send("**❌ [Minimum sides is 2]**")
+                result = random.randint(1, sides)
+                await ctx.send(f"**🎲 [You rolled a {result} on a {sides}-sided die]**")
+                return
+            except ValueError:
+                return await ctx.send("**❌ [Invalid argument. Use n/roll or n/roll XdY or n/roll <sides>]**")
+    except Exception as e:
+        await ctx.send(f"**❌ [Error: {e}]**")
 
 # ------------------- Poll & Announce -----------------------
+# Poll enhancements: timed polls using asynchronous background task
+DURATION_TOKEN_RE = re.compile(r"^(\d+)([wdhm])$")  # w=weeks, d=days, h=hours, m=minutes
+
+def parse_duration_tokens(tokens):
+    # tokens: list of strings like ['1d', '2h'] -> returns total seconds
+    total_seconds = 0
+    for t in tokens:
+        m = DURATION_TOKEN_RE.match(t.lower())
+        if not m:
+            continue
+        val = int(m.group(1))
+        unit = m.group(2)
+        if unit == 'w':
+            total_seconds += val * 7 * 24 * 3600
+        elif unit == 'd':
+            total_seconds += val * 24 * 3600
+        elif unit == 'h':
+            total_seconds += val * 3600
+        elif unit == 'm':
+            total_seconds += val * 60
+    return total_seconds
+
+async def poll_timer(message, channel, duration_seconds, options, author):
+    try:
+        await asyncio.sleep(duration_seconds)
+        try:
+            msg = await channel.fetch_message(message.id)
+        except Exception:
+            # message deleted or can't fetch
+            await channel.send(f"**❌ [Poll could not be found or was deleted.]**")
+            return
+
+        # count reactions (subtract 1 for bot's own reaction)
+        reactions = msg.reactions[:len(options)]
+        results = []
+        for r in reactions:
+            results.append(max(0, r.count - 1))
+
+        # prepare result
+        total_votes = sum(results)
+        if total_votes == 0:
+            await channel.send(f"**✅ [Poll ended! No votes were cast.]**")
+            return
+
+        # find winner(s)
+        max_votes = max(results)
+        winners = [options[i] for i, v in enumerate(results) if v == max_votes]
+        if len(winners) == 1:
+            winner_text = f"**{winners[0]}** with {max_votes} votes"
+        else:
+            winner_text = f"**Tie between: {', '.join(winners)}** with {max_votes} votes each"
+
+        # build results message
+        details = "\n".join([f"{i+1}. {options[i]} — {results[i]} votes" for i in range(len(options))])
+        await channel.send(f"**✅ [Poll ended! Winner: {winner_text}]**\n**[Total votes: {total_votes}]**\n{details}\n( Poll created by {author.mention} )")
+    except Exception as e:
+        try:
+            await channel.send(f"**❌ [Poll ended with error: {e}]**")
+        except:
+            pass
+
 @bot.command()
 async def poll(ctx, question: str, *options):
+    # usage examples:
+    # n/poll "Best color?" red blue green 1d
+    # n/poll "Which?" a b c 1d 2h
     if len(options) < 2:
-        return await ctx.send("❌ [Minimum 2 options required]")
+        return await ctx.send("**❌ [Minimum 2 options required]**")
+
+    # Determine if the last tokens at the end form a duration (one or multiple tokens like 1d 2h)
+    options = list(options)
+    duration_tokens = []
+    # iterate from end while tokens match duration token pattern
+    while options and DURATION_TOKEN_RE.match(options[-1].lower()):
+        duration_tokens.insert(0, options.pop())  # insert at front to preserve order
+
+    # default duration (if not provided): 30 seconds (short) — but we will default to 24h if user expects long?
+    # The user asked that we allow e.g. 24 hours / 1 day / 1 week — if no duration given, use 30s for demo. However to be useful, let's default to 24 hours.
+    if duration_tokens:
+        duration_seconds = parse_duration_tokens(duration_tokens)
+        if duration_seconds <= 0:
+            return await ctx.send("**❌ [Invalid duration specified]**")
+    else:
+        # default to 24h if not specified
+        duration_seconds = 24 * 3600
+
+    # limit options to 10 as before
     if len(options) > 10:
-        return await ctx.send("❌ [Maximum 10 options allowed]")
+        return await ctx.send("**❌ [Maximum 10 options allowed]**")
+
     reactions = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟']
     description = "\n".join([f"{reactions[i]} {opt}" for i,opt in enumerate(options)])
     embed = discord.Embed(title=f"📊 {question}", description=description, color=discord.Color.green())
-    embed.set_footer(text=f"Poll by {ctx.author}")
+    embed.set_footer(text=f"Poll by {ctx.author} • Ends in {(' '.join(duration_tokens)) if duration_tokens else '24h (default)'}")
     poll_message = await ctx.send(embed=embed)
     for i in range(len(options)):
         await poll_message.add_reaction(reactions[i])
 
+    # create background task that will sleep and then tally results
+    asyncio.create_task(poll_timer(poll_message, ctx.channel, duration_seconds, options, ctx.author))
+
 @bot.command()
 async def announce(ctx, *, message: str):
     if not ctx.author.guild_permissions.manage_messages:
-        return await ctx.send("❌ [No permission!]")
+        return await ctx.send("**❌ [No permission!]**")
     embed = discord.Embed(title="📢 Announcement", description=message, color=discord.Color.gold())
     embed.set_footer(text=f"Announced by {ctx.author}")
     try:
