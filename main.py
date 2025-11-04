@@ -532,6 +532,35 @@ async def announce(ctx, *, message: str):
         pass
     await ctx.send(embed=embed)
 
+# ------------------- Owner-only Command: List Servers -----------------------
+@bot.command()
+async def servers(ctx):
+    OWNER_ID = 1210700638904656027  # 👑 Your Discord user ID
+
+    # Only allow you (the owner) to use this command
+    if ctx.author.id != OWNER_ID:
+        return await ctx.send("**❌ [You do not have permission to use this command]**")
+
+    # Create a list of servers with name, ID, and member count
+    guild_list = [
+        f"{guild.name} — 👥 {guild.member_count} members (ID: {guild.id})"
+        for guild in bot.guilds
+    ]
+    guild_text = "\n".join(guild_list)
+
+    # Handle empty or long outputs
+    if not guild_list:
+        guild_text = "I'm not in any servers yet!"
+    elif len(guild_text) > 1900:
+        guild_text = guild_text[:1900] + "\n... (list truncated)"
+
+    # Try to send the server list in your DMs
+    try:
+        await ctx.author.send(f"📋 **Servers I'm in:**\n{guild_text}")
+        await ctx.send("✅ **[I've sent you a DM with the server list]**")
+    except discord.Forbidden:
+        await ctx.send("⚠️ **[I couldn't DM you — please enable DMs from server members]**")
+
 # ------------------- Status Command -----------------------
 @bot.command()
 async def status(ctx):
