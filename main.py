@@ -66,6 +66,7 @@ async def help(ctx):
         "n/mute @user <reason>\n"
         "n/unmute @user\n"
         "n/warn @user <reason>\n"
+        "n/snipe [0] #channel\n"
         "n/clear <amount> [images/users] ex: images"
         "```"
     ), inline=False)
@@ -95,6 +96,7 @@ async def help(ctx):
         "n/ping\n"
         "n/time\n"
         "n/status - Show bot and web service status"
+        "n/invite"
         "```"
     ), inline=False)
 
@@ -107,7 +109,8 @@ async def help(ctx):
         "n/hugall\n"
         "n/kiss @user\n"
         "n/flipcoin\n"
-        "n/roll [sides] or n/roll XdY"
+        "n/roll [sides] or n/roll XdY\n"
+        "n/8ball <question>\n"
         "```"
     ), inline=False)
 
@@ -193,6 +196,64 @@ async def warn(ctx, member: discord.Member, *, reason=None):
         await member.send(f"**⚠️ [You have been warned in {ctx.guild.name}.] Reason: {reason or 'No reason provided'}**")
     except:
         await ctx.send("**⚠️ [Warning sent, but user’s DMs are closed.]**")
+
+# ------------------- Advanced Snipe Command -----------------------
+from collections import defaultdict
+
+# Store deleted messages per channel (up to 10 per channel)
+snipes = defaultdict(list)
+
+@bot.event
+async def on_message_delete(message):
+    if message.author.bot:
+        return
+
+    # Get first attachment URL if any
+    attachment_url = message.attachments[0].url if message.attachments else None
+
+    snipes[message.channel.id].insert(0, {
+        "content": message.content if message.content else "[Attachment]",
+        "author": message.author,
+        "time": datetime.utcnow(),
+        "attachment": attachment_url
+    })
+
+    # Keep only last 10 deletions per channel
+    if len(snipes[message.channel.id]) > 10:
+        snipes[message.channel.id].pop()
+
+@bot.command()
+async def snipe(ctx, index: int = 1, channel: discord.TextChannel = None):
+    """
+    Usage:
+    n/snipe               -> Last deleted message in current channel
+    n/snipe 3             -> 3rd last deleted message in current channel
+    n/snipe 2 #general    -> 2nd last deleted message in #general
+    """
+
+    channel = channel or ctx.channel
+    messages = snipes.get(channel.id)
+
+    if not messages:
+        return await ctx.send(f"**❌ [No recently deleted messages found in {channel.mention}]**")
+
+    if index < 1 or index > len(messages):
+        return await ctx.send(f"**❌ [There are only {len(messages)} deleted messages stored for {channel.mention}]**")
+
+    data = messages[index - 1]
+    author = data["author"]
+    content = data["content"]
+    attachment = data["attachment"]
+    time_deleted = data["time"].strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    embed = discord.Embed(description=content, color=discord.Color.red())
+    embed.set_author(name=f"{author} said in #{channel.name}:")
+    embed.set_footer(text=f"Deleted at {time_deleted} • Requested by {ctx.author}")
+
+    if attachment:
+        embed.set_image(url=attachment)
+
+    await ctx.send(embed=embed)
 
 # ------------------- Mute/Unmute -----------------------
 @bot.command()
@@ -367,7 +428,7 @@ async def serverinfo(ctx):
     embed.add_field(name="Owner", value=guild.owner.mention if guild.owner else "Unknown")
     embed.add_field(name="Created", value=guild.created_at.strftime("%Y-%m-%d"))
     embed.add_field(name="Members", value=guild.member_count)
-    embed.add_field(name="Channels", value=len(guild.channels))
+    embed.add_field(name="Channels & Catagories", value=len(guild.channels))
     embed.add_field(name="Roles", value=len(guild.roles))
     embed.set_footer(text=f"Requested by {ctx.author}")
     await ctx.send(embed=embed)
@@ -390,6 +451,12 @@ async def avatar(ctx, member: Optional[discord.Member] = None):
 @bot.command()
 async def time(ctx):
     await ctx.send(f"**⏰ [Current UTC Time: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}]**")
+
+@bot.command()
+async def invite(ctx):
+    app_info = await bot.application_info()
+    invite_link = f"https://discord.com/oauth2/authorize?client_id={app_info.id}&permissions=8&scope=bot%20applications.commands"
+    await ctx.send(f"**🔗 [Invite me using this link:]**\n{invite_link}")
 
 # ------------------- Fun Commands -----------------------
 @bot.command()
@@ -439,6 +506,19 @@ async def roll(ctx, arg: Optional[str] = None):
         await ctx.send("**❌ [Invalid argument. Use n/roll, n/roll XdY, or n/roll <sides>]**")
     except Exception as e:
         await ctx.send(f"**❌ [Error: {e}]**")
+
+@bot.command(aliases=['8ball'])
+async def eightball(ctx, *, question: str):
+    responses = [
+        "It is certain.", "Without a doubt.", "You may rely on it.",
+        "Yes, definitely.", "As I see it, yes.", "Most likely.",
+        "Outlook good.", "Signs point to yes.", "Reply hazy, try again.",
+        "Ask again later.", "Better not tell you now.",
+        "Cannot predict now.", "Concentrate and ask again.",
+        "Don’t count on it.", "My reply is no.",
+        "Outlook not so good.", "Very doubtful."
+    ]
+    await ctx.send(f"🎱 **Question:** {question}\n**Answer:** {random.choice(responses)}")
 
 # ------------------- Poll & Announce -----------------------
 DURATION_TOKEN_RE = re.compile(r"^(\d+)([wdhm])$")
@@ -524,8 +604,8 @@ async def poll(ctx, question: str, *options):
 async def announce(ctx, *, message: str):
     if not ctx.author.guild_permissions.manage_messages:
         return await ctx.send(no_perm_msg("make announcements"))
-    embed = discord.Embed(title="📢 Announcement", description=message, color=discord.Color.gold())
-    embed.set_footer(text=f"**Announcements** • Requested by {ctx.author}")
+    embed = discord.Embed(title="📢 **Announcement**", description=message, color=discord.Color.gold())
+    embed.set_footer(text=f"Announcements • Requested by {ctx.author}")
     try:
         await ctx.message.delete()
     except:
@@ -582,9 +662,9 @@ async def status(ctx):
             try:
                 async with session.get(render_url, timeout=5) as resp:
                     if resp.status == 200:
-                        web_status = "✅ Online"
+                        web_status = "✅ **[Online]**"
             except:
-                web_status = "❌ Offline"
+                web_status = "❌ **[Offline]**"
 
         embed = discord.Embed(
             title="**🛰️ [Bot Status]**",
