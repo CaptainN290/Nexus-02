@@ -95,8 +95,8 @@ async def help(ctx):
         "n/avatar [@user]\n"
         "n/ping\n"
         "n/time\n"
-        "n/status - Show bot and web service status"
-        "n/invite"
+        "n/status - Show bot and web service status\n"
+        "n/invite\n"
         "```"
     ), inline=False)
 
@@ -111,6 +111,15 @@ async def help(ctx):
         "n/flipcoin\n"
         "n/roll [sides] or n/roll XdY\n"
         "n/8ball <question>\n"
+        "n/meme\n"
+        "n/rps <rock/paper/scissors>\n"
+        "n/tictactoe @opponent\n"
+        "n/tttmove <position> (1-9)\n"
+        "n/connect4 @opponent\n"
+        "n/c4move <1-7> (1-7 = columns)\n"
+        "n/rpg (type your choices directly into chat no 'n/' prefix needed.)\n"
+        "n/spellduel @opponent (type your spell/attack directly into chat no 'n/' prefix required.)\n"
+        "n/rapbattle @opponent (type your comebacks directly into chat no 'n/' prefix needed.)\n"
         "```"
     ), inline=False)
 
@@ -428,7 +437,7 @@ async def serverinfo(ctx):
     embed.add_field(name="Owner", value=guild.owner.mention if guild.owner else "Unknown")
     embed.add_field(name="Created", value=guild.created_at.strftime("%Y-%m-%d"))
     embed.add_field(name="Members", value=guild.member_count)
-    embed.add_field(name="Channels & Catagories", value=len(guild.channels))
+    embed.add_field(name="Channels & Categories", value=len(guild.channels))
     embed.add_field(name="Roles", value=len(guild.roles))
     embed.set_footer(text=f"Requested by {ctx.author}")
     await ctx.send(embed=embed)
@@ -456,7 +465,7 @@ async def time(ctx):
 async def invite(ctx):
     app_info = await bot.application_info()
     invite_link = f"https://discord.com/oauth2/authorize?client_id={app_info.id}&permissions=8&scope=bot%20applications.commands"
-    await ctx.send(f"**🔗 [Invite me using this link:]**\n{invite_link}")
+    await ctx.send(f"**🔗 [[Click here](https://discord.com/oauth2/authorize?client_id=1432139270860177581&permissions=8&integration_type=0&scope=bot) to invite 𝐍𝐞𝐱𝐮𝐬 bot to your server.]**")
 
 # ------------------- Fun Commands -----------------------
 @bot.command()
@@ -519,6 +528,476 @@ async def eightball(ctx, *, question: str):
         "Outlook not so good.", "Very doubtful."
     ]
     await ctx.send(f"🎱 **Question:** {question}\n**Answer:** {random.choice(responses)}")
+
+@bot.command()
+async def meme(ctx):
+    """
+    Fetch a random meme from meme-api.com
+    """
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get("https://meme-api.com/gimme") as resp:
+                if resp.status != 200:
+                    return await ctx.send("❌ **[Failed to fetch meme — API returned an error.]**")
+
+                data = await resp.json()
+                title = data.get("title")
+                subreddit = data.get("subreddit")
+                post_url = data.get("postLink")
+                image_url = data.get("url")
+
+                embed = discord.Embed(
+                    title=f"😂 {title}",
+                    url=post_url,
+                    color=discord.Color.random()
+                )
+                embed.set_image(url=image_url)
+                embed.set_footer(text=f"From r/{subreddit} • Requested by {ctx.author}")
+                await ctx.send(embed=embed)
+
+        except Exception as e:
+            await ctx.send(f"❌ **[Error fetching meme: {e}]**")
+
+@bot.command()
+async def rps(ctx, choice: str):
+    """Play Rock-Paper-Scissors"""
+    choices = ["rock", "paper", "scissors"]
+    choice = choice.lower()
+    if choice not in choices:
+        return await ctx.send("❌ Choose rock, paper, or scissors!")
+
+    bot_choice = random.choice(choices)
+    if choice == bot_choice:
+        result = "It's a tie!"
+    elif (choice == "rock" and bot_choice == "scissors") or \
+         (choice == "paper" and bot_choice == "rock") or \
+         (choice == "scissors" and bot_choice == "paper"):
+        result = "You win!"
+    else:
+        result = "You lose!"
+
+    await ctx.send(f"🤖 I chose **{bot_choice}**.\n🎉 {result}")
+
+active_ttt = {}
+
+@bot.command()
+async def tictactoe(ctx, opponent: discord.Member):
+    """Play Tic-Tac-Toe with another user"""
+    if ctx.channel.id in active_ttt:
+        return await ctx.send("❌ A game is already active in this channel.")
+
+    board = ["⬜"] * 9
+    turn = ctx.author
+    active_ttt[ctx.channel.id] = {"board": board, "turn": turn, "player1": ctx.author, "player2": opponent}
+
+    def format_board(b):
+        return f"{b[0]}{b[1]}{b[2]}\n{b[3]}{b[4]}{b[5]}\n{b[6]}{b[7]}{b[8]}"
+
+    await ctx.send(f"🎮 Tic-Tac-Toe started! {ctx.author.mention} vs {opponent.mention}\n\n{format_board(board)}\nIt's {turn.mention}'s turn! Pick a position 1-9 with `n/tttmove <pos>`")
+
+@bot.command()
+async def tttmove(ctx, pos: int):
+    """Make a move in Tic-Tac-Toe"""
+    game = active_ttt.get(ctx.channel.id)
+    if not game:
+        return await ctx.send("❌ No active game here.")
+    if ctx.author != game["turn"]:
+        return await ctx.send("❌ It's not your turn.")
+    if pos < 1 or pos > 9:
+        return await ctx.send("❌ Position must be 1-9.")
+    board = game["board"]
+    if board[pos-1] != "⬜":
+        return await ctx.send("❌ That spot is already taken.")
+
+    mark = "❌" if ctx.author == game["player1"] else "⭕"
+    board[pos-1] = mark
+
+    def check_win(b, m):
+        wins = [(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(2,4,6)]
+        return any(b[i]==b[j]==b[k]==m for i,j,k in wins)
+
+    def format_board(b):
+        return f"{b[0]}{b[1]}{b[2]}\n{b[3]}{b[4]}{b[5]}\n{b[6]}{b[7]}{b[8]}"
+
+    if check_win(board, mark):
+        await ctx.send(f"{format_board(board)}\n🎉 {ctx.author.mention} wins!")
+        active_ttt.pop(ctx.channel.id)
+        return
+    if "⬜" not in board:
+        await ctx.send(f"{format_board(board)}\n🤝 It's a tie!")
+        active_ttt.pop(ctx.channel.id)
+        return
+
+    game["turn"] = game["player2"] if game["turn"] == game["player1"] else game["player1"]
+    await ctx.send(f"{format_board(board)}\nIt's {game['turn'].mention}'s turn!")
+
+active_c4 = {}
+
+ROWS, COLS = 6, 7
+
+@bot.command()
+async def connect4(ctx, opponent: discord.Member):
+    """Start Connect 4"""
+    if ctx.channel.id in active_c4:
+        return await ctx.send("❌ A Connect 4 game is already active here.")
+
+    board = [["⚪" for _ in range(COLS)] for _ in range(ROWS)]
+    turn = ctx.author
+    active_c4[ctx.channel.id] = {"board": board, "turn": turn, "player1": ctx.author, "player2": opponent}
+
+    def format_board(b):
+        s = ""
+        for row in b:
+            s += "".join(row) + "\n"
+        s += "1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣"
+        return s
+
+    await ctx.send(f"🎮 Connect 4 started! {ctx.author.mention} vs {opponent.mention}\n\n{format_board(board)}\nUse `n/c4move <column>` to play!")
+
+@bot.command()
+async def c4move(ctx, col: int):
+    """Make a move in Connect 4"""
+    game = active_c4.get(ctx.channel.id)
+    if not game:
+        return await ctx.send("❌ No active Connect 4 game.")
+    if ctx.author != game["turn"]:
+        return await ctx.send("❌ It's not your turn.")
+    if not 1 <= col <= COLS:
+        return await ctx.send("❌ Column must be 1-7.")
+
+    board = game["board"]
+    col -= 1
+    for row in reversed(board):
+        if row[col] == "⚪":
+            row[col] = "🔴" if ctx.author == game["player1"] else "🟡"
+            break
+    else:
+        return await ctx.send("❌ That column is full!")
+
+    def check_win(b, piece):
+        # horizontal, vertical, diagonal
+        for r in range(ROWS):
+            for c in range(COLS-3):
+                if all(b[r][c+i]==piece for i in range(4)):
+                    return True
+        for r in range(ROWS-3):
+            for c in range(COLS):
+                if all(b[r+i][c]==piece for i in range(4)):
+                    return True
+        for r in range(ROWS-3):
+            for c in range(COLS-3):
+                if all(b[r+i][c+i]==piece for i in range(4)):
+                    return True
+        for r in range(3, ROWS):
+            for c in range(COLS-3):
+                if all(b[r-i][c+i]==piece for i in range(4)):
+                    return True
+        return False
+
+    piece = "🔴" if ctx.author == game["player1"] else "🟡"
+    def format_board(b):
+        s = ""
+        for row in b:
+            s += "".join(row) + "\n"
+        s += "1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣"
+        return s
+
+    if check_win(board, piece):
+        await ctx.send(f"{format_board(board)}\n🎉 {ctx.author.mention} wins!")
+        active_c4.pop(ctx.channel.id)
+        return
+
+    if all(board[0][c] != "⚪" for c in range(COLS)):
+        await ctx.send(f"{format_board(board)}\n🤝 It's a tie!")
+        active_c4.pop(ctx.channel.id)
+        return
+
+    game["turn"] = game["player2"] if game["turn"] == game["player1"] else game["player1"]
+    await ctx.send(f"{format_board(board)}\nIt's {game['turn'].mention}'s turn!")
+
+import random
+import asyncio
+
+# Track active adventures
+active_adventures = {}
+player_stats = {}
+
+# Adventure rooms with branching paths and multiple endings
+adventure_rooms = {
+    "start": {
+        "desc": "🗺️ You find yourself in a mysterious forest. Two paths lie ahead: `left` or `right`?",
+        "choices": {"left": "river", "right": "cave"}
+    },
+    "river": {
+        "desc": "🌊 A wide river blocks your way. Do you `swim` across or `walk` along the bank?",
+        "choices": {"swim": "shark", "walk": "hut"}
+    },
+    "cave": {
+        "desc": "🕳️ You enter a dark cave. `explore` deeper or `exit` back?",
+        "choices": {"explore": "treasure", "exit": "start"}
+    },
+    "shark": {
+        "desc": "🦈 A shark attacks while you swim! You barely escape and reach a hut.",
+        "choices": {"continue": "hut"}
+    },
+    "hut": {
+        "desc": "🏠 You find a small hut with a friendly old man who offers a potion. Do you `take` it or `ignore` it?",
+        "choices": {"take": "potion", "ignore": "forest_exit"}
+    },
+    "treasure": {
+        "desc": "💰 You found a hidden treasure! 🎉 Congratulations, you win!",
+        "choices": {}
+    },
+    "potion": {
+        "desc": "🧪 The potion gives you magical strength! Do you continue `forward` or `rest`?",
+        "choices": {"forward": "dragon_lair", "rest": "forest_exit"}
+    },
+    "dragon_lair": {
+        "desc": "🐉 You encounter a sleeping dragon. Do you `fight` or `sneak` past it?",
+        "choices": {"fight": "dragon_fight", "sneak": "forest_exit"}
+    },
+    "dragon_fight": {
+        "desc": "⚔️ You bravely fight the dragon!",
+        "choices": {}
+    },
+    "forest_exit": {
+        "desc": "🌳 You safely exit the forest. Adventure complete! 🎉",
+        "choices": {}
+    }
+}
+
+# Define possible fight outcomes
+async def dragon_fight_outcome(ctx, user):
+    outcome = random.choice(["win", "lose"])
+    if outcome == "win":
+        await ctx.send("🎉 You slayed the dragon and found legendary treasure! You win!")
+    else:
+        await ctx.send("💀 The dragon overpowered you. You barely escape with your life.")
+    active_adventures.pop(user.id)
+    player_stats.pop(user.id)
+
+# Command to start RPG
+@bot.command(name="rpg")
+async def mini_rpg(ctx):
+    if ctx.author.id in active_adventures:
+        return await ctx.send("❌ You already have an active adventure!")
+
+    active_adventures[ctx.author.id] = "start"
+    player_stats[ctx.author.id] = {"hp": 100, "items": []}
+
+    await ctx.send(f"Welcome {ctx.author.mention} to the Mini RPG!\nType your choices to play.\n")
+    await show_room(ctx, ctx.author)
+
+async def show_room(ctx, user):
+    room_key = active_adventures[user.id]
+    room = adventure_rooms[room_key]
+    desc = room["desc"]
+    choices = list(room["choices"].keys())
+    
+    choice_text = "\nChoices: " + ", ".join(f"`{c}`" for c in choices) if choices else "\nNo choices, adventure ends."
+    await ctx.send(desc + choice_text)
+
+    if not choices:
+        # Special case for dragon fight
+        if room_key == "dragon_fight":
+            await dragon_fight_outcome(ctx, user)
+        else:
+            active_adventures.pop(user.id)
+            player_stats.pop(user.id)
+        return
+
+    def check(m):
+        return m.author == user and m.channel == ctx.channel and m.content.lower() in choices
+
+    try:
+        msg = await bot.wait_for("message", check=check, timeout=60)
+        choice = msg.content.lower()
+
+        # Random encounter damage example
+        if room_key == "river" and choice == "swim":
+            damage = random.randint(5, 20)
+            player_stats[user.id]["hp"] -= damage
+            await ctx.send(f"💥 You struggled in the water and lost {damage} HP! Current HP: {player_stats[user.id]['hp']}")
+            if player_stats[user.id]["hp"] <= 0:
+                await ctx.send("💀 You fainted! Adventure over.")
+                active_adventures.pop(user.id)
+                player_stats.pop(user.id)
+                return
+
+        # Move to next room
+        next_room = room["choices"][choice]
+        active_adventures[user.id] = next_room
+        await show_room(ctx, user)
+    except asyncio.TimeoutError:
+        await ctx.send("⌛ Adventure timed out! Try again later.")
+        active_adventures.pop(user.id)
+        player_stats.pop(user.id)
+
+active_spell_duels = {}
+
+SPELLS = {
+    "fireball": (20, "🔥 Fireball"),
+    "iceblast": (15, "❄️ Ice Blast"),
+    "lightning": (25, "⚡ Lightning Strike"),
+    "heal": (-20, "💖 Heal")
+}
+
+@bot.command()
+async def spellduel(ctx, member: discord.Member):
+    if ctx.author.id in active_spell_duels or member.id in active_spell_duels:
+        return await ctx.send("❌ One of you is already in a duel!")
+    
+    hp = {ctx.author: 100, member: 100}
+    turn_order = [ctx.author, member]
+    current_turn = 0
+
+    active_spell_duels[ctx.author.id] = member.id
+    active_spell_duels[member.id] = ctx.author.id
+
+    await ctx.send(f"🧙‍♂️ Spell Duel started: {ctx.author.mention} vs {member.mention}\nEach player has 100 HP.\nAvailable spells: {', '.join(SPELLS.keys())}")
+
+    while all(hp[p] > 0 for p in turn_order):
+        player = turn_order[current_turn]
+        opponent = turn_order[1-current_turn]
+
+        await ctx.send(f"🎯 {player.mention}, it's your turn! Choose a spell: {', '.join(SPELLS.keys())}")
+
+        def check(m):
+            return m.author == player and m.channel == ctx.channel and m.content.lower() in SPELLS
+
+        try:
+            msg = await bot.wait_for('message', check=check, timeout=30)
+            spell = msg.content.lower()
+            dmg, name = SPELLS[spell]
+            hp[opponent] -= dmg if dmg > 0 else 0
+            if dmg < 0:
+                hp[player] = min(100, hp[player]-dmg)  # heal
+            await ctx.send(f"{player.mention} used {name}!\n{opponent.mention} HP: {hp[opponent]}\n{player.mention} HP: {hp[player]}")
+        except asyncio.TimeoutError:
+            await ctx.send(f"⌛ {player.mention} took too long! Skipping turn.")
+
+        if hp[opponent] <= 0:
+            await ctx.send(f"🎉 {player.mention} wins the duel!")
+            break
+        current_turn = 1 - current_turn
+
+    active_spell_duels.pop(ctx.author.id, None)
+    active_spell_duels.pop(member.id, None)
+
+import asyncio
+import discord
+from discord.ext import commands
+
+active_rapbattles = {}  # Track active rap battles per channel
+
+@bot.command()
+async def rapbattle(ctx, opponent: discord.Member):
+    """Challenge a user to a rap battle."""
+    if ctx.author.id == opponent.id:
+        return await ctx.send("❌ You cannot rap battle yourself!")
+    
+    if ctx.channel.id in active_rapbattles:
+        return await ctx.send("❌ A rap battle is already active in this channel.")
+
+    # Send challenge embed
+    embed = discord.Embed(
+        title="🎤 Rap Battle Challenge!",
+        description=f"{ctx.author.mention} has challenged {opponent.mention} to a rap battle!\nDo you accept?",
+        color=discord.Color.purple()
+    )
+    embed.set_footer(text="React with ✅ to accept or ❌ to decline.")
+    msg = await ctx.send(embed=embed)
+    await msg.add_reaction("✅")
+    await msg.add_reaction("❌")
+
+    def check(reaction, user):
+        return user == opponent and str(reaction.emoji) in ["✅", "❌"] and reaction.message.id == msg.id
+
+    try:
+        reaction, user = await bot.wait_for("reaction_add", check=check, timeout=60)
+    except asyncio.TimeoutError:
+        return await ctx.send("⌛ Challenge timed out.")
+
+    if str(reaction.emoji) == "❌":
+        return await ctx.send(f"❌ {opponent.mention} declined the rap battle.")
+
+    # Start battle
+    active_rapbattles[ctx.channel.id] = {
+        "players": [ctx.author, opponent],
+        "turn_index": 0,
+        "lines": {ctx.author.id: [], opponent.id: []},
+        "round": 1
+    }
+
+    await ctx.send(f"🔥 Rap battle started between {ctx.author.mention} (🔥) and {opponent.mention} (😎)!\nTake turns sending your rap lines. 3 rounds total.")
+    await next_rap_turn(ctx)
+
+async def next_rap_turn(ctx):
+    battle = active_rapbattles[ctx.channel.id]
+    players = battle["players"]
+    turn_index = battle["turn_index"]
+    player = players[turn_index]
+
+    await ctx.send(f"🎤 **{player.display_name}'s turn!** Send your rap line now.")
+
+    def check_msg(m):
+        return m.author == player and m.channel == ctx.channel
+
+    try:
+        msg = await bot.wait_for("message", check=check_msg, timeout=60)
+        battle["lines"][player.id].append(msg.content)
+    except asyncio.TimeoutError:
+        await ctx.send(f"⌛ {player.mention} took too long! Skipping turn.")
+        battle["lines"][player.id].append("...")  # Empty line
+
+    # Switch turn
+    battle["turn_index"] = 1 - turn_index
+    # Increment round every 2 turns
+    if battle["turn_index"] == 0:
+        battle["round"] += 1
+
+    if battle["round"] > 3:
+        # Battle ends
+        await end_rapbattle(ctx)
+    else:
+        await next_rap_turn(ctx)
+
+async def end_rapbattle(ctx):
+    battle = active_rapbattles.pop(ctx.channel.id)
+    p1, p2 = battle["players"]
+    p1_lines = battle["lines"][p1.id]
+    p2_lines = battle["lines"][p2.id]
+
+    embed = discord.Embed(
+        title="🎤 Rap Battle Ended! Time to vote!",
+        description="React with 🔥 for **Player 1** or 😎 for **Player 2**",
+        color=discord.Color.gold()
+    )
+
+    battle_text = ""
+    for i in range(len(p1_lines)):
+        battle_text += f"**Round {i+1}**\n(🔥) **[{p1.display_name}]:** {p1_lines[i]}\n(😎) **[{p2.display_name}]:** {p2_lines[i]}\n\n"
+
+    embed.add_field(name="Rap Battle Lines", value=battle_text[:1024])  # Discord field limit
+    vote_msg = await ctx.send(embed=embed)
+    await vote_msg.add_reaction("🔥")
+    await vote_msg.add_reaction("😎")
+
+    await asyncio.sleep(30)  # Voting time
+    vote_msg = await ctx.channel.fetch_message(vote_msg.id)
+
+    votes_p1 = next((r.count - 1 for r in vote_msg.reactions if str(r.emoji) == "🔥"), 0)
+    votes_p2 = next((r.count - 1 for r in vote_msg.reactions if str(r.emoji) == "😎"), 0)
+
+    winner_text = f"(🔥) **[{p1.display_name}]: {votes_p1} votes**\n(😎) **[{p2.display_name}]: {votes_p2} votes**"
+    if votes_p1 > votes_p2:
+        winner = p1.display_name
+    elif votes_p2 > votes_p1:
+        winner = p2.display_name
+    else:
+        winner = "Tie!"
+
+    await ctx.send(f"🏆 The rap battle winner is: **{winner}**!\n{winner_text}")
 
 # ------------------- Poll & Announce -----------------------
 DURATION_TOKEN_RE = re.compile(r"^(\d+)([wdhm])$")
@@ -673,7 +1152,7 @@ async def status(ctx):
         embed.add_field(name="Uptime", value=f"**[{uptime_str}]**", inline=False)
         embed.add_field(name="Ping", value=f"**[{latency}ms]**", inline=False)
         embed.add_field(name="Servers | Users", value=f"**[{guild_count} | {user_count}]**", inline=False)
-        embed.add_field(name="Web Service", value=f"**[{web_status}]**", inline=False)
+        embed.add_field(name="Web Service", value=web_status, inline=False)
         embed.set_footer(text=f"Last Reboot: {bot_start_time.strftime('%Y-%m-%d %H:%M UTC')} • Requested by {ctx.author}")
 
         await ctx.send(embed=embed)
