@@ -57,74 +57,71 @@ async def help(ctx):
     )
 
     embed.add_field(name="**⛊ Moderation**", value=(
-        "```"
-        "n/kick @user <reason>\n"
-        "n/ban @user <reason>\n"
-        "n/unban <user_id>\n"
-        "n/timeout @user <minutes> <reason>\n"
-        "n/removetimeout @user\n"
-        "n/mute @user <reason>\n"
-        "n/unmute @user\n"
-        "n/warn @user <reason>\n"
-        "n/snipe [0] #channel\n"
-        "n/clear <amount> [images/users] ex: images"
-        "```"
+        "**n/kick @user <reason>** - Kick a member (requires permissions)\n"
+        "**n/ban @user <reason>** - Ban a member (requires permissions)\n"
+        "**n/unban <user_id>** - Unban a user\n"
+        "**n/timeout @user <minutes> [reason]** - Timeout a member\n"
+        "**n/removetimeout @user** - Remove a timeout from a member\n"
+        "**n/mute @user [reason]** - Mute a member\n"
+        "**n/unmute @user** - Unmute a member\n"
+        "**n/warn @user [reason]** - Warn a member\n"
+        "**n/snipe [0-5] [#channel]** - Retrieve recently deleted messages\n"
+        "**n/clear <amount> [images/users]** - Delete a certain amount of messages"
     ), inline=False)
 
     embed.add_field(name="**⚙︎ Channel**", value=(
-        "```"
-        "n/slowmode <seconds>\n"
-        "n/lock\n"
-        "n/unlock"
-        "```"
+        "**n/slowmode <seconds>** - Set a slowmode delay in the channel\n"
+        "**n/lock** - Lock the current channel\n"
+        "**n/unlock** - Unlock the current channel"
     ), inline=False)
 
     embed.add_field(name="**𐀪 Roles**", value=(
-        "```"
-        "n/addrole @user @role\n"
-        "n/removerole @user @role\n"
-        "n/rolecatalog"
-        "```"
+        "**n/addrole @user @role** - Give a member a specific role\n"
+        "**n/removerole @user @role** - Remove a role from a member\n"
+        "**n/rolecatalog** - View all roles (limit: 20)"
     ), inline=False)
 
     embed.add_field(name="**𝒊 Info**", value=(
-        "```"
-        "n/userinfo [@user]\n"
-        "n/serverinfo\n"
-        "n/serverbanner\n"
-        "n/avatar [@user]\n"
-        "n/ping\n"
-        "n/time\n"
-        "n/status - Show bot and web service status\n"
-        "n/invite\n"
-        "```"
+        "**n/userinfo @user** - View info about a user\n"
+        "**n/serverinfo** - View server info\n"
+        "**n/serverbanner** - Display the server banner\n"
+        "**n/avatar @user** - View a member's avatar\n"
+        "**n/ping** - Show bot latency\n"
+        "**n/time** - Display current UTC time\n"
+        "**n/status** - Show bot and web service status\n"
+        "**n/invite** - Get the bot's invite link"
     ), inline=False)
 
     embed.add_field(name="**☻ Fun & Utility**", value=(
-        "```"
-        "n/say <message>\n"
-        "n/poll \"question\" option1 option2 0d 0h\n"
-        "n/announce <message>\n"
-        "n/hug @user\n"
-        "n/hugall\n"
-        "n/kiss @user\n"
-        "n/flipcoin\n"
-        "n/roll [sides] or n/roll XdY\n"
-        "n/8ball <question>\n"
-        "n/meme\n"
-        "n/rps <rock/paper/scissors>\n"
-        "n/tictactoe @opponent\n"
-        "n/tttmove <position> (1-9)\n"
-        "n/connect4 @opponent\n"
-        "n/c4move <1-7> (1-7 = columns)\n"
-        "n/rpg (type your choices directly into chat no 'n/' prefix needed.)\n"
-        "n/spellduel @opponent (type your spell/attack directly into chat no 'n/' prefix required.)\n"
-        "n/rapbattle @opponent (type your comebacks directly into chat no 'n/' prefix needed.)\n"
-        "```"
+        "**n/say <message>** - Make the bot repeat your message\n"
+        "**n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
+        "**n/announce <message>** - Announce a message\n"
+        "**n/hug @user** - Hug a member\n"
+        "**n/hugall** - Hug everyone\n"
+        "**n/kiss @user** - Kiss a member\n"
+        "**n/flipcoin** - Flip a coin\n"
+        "**n/roll [sides]** or **n/roll XdY** - Roll dice\n"
+        "**n/8ball <question>** - Ask the magic 8ball\n"
+        "**n/meme** - Get a random meme\n"
+        "**n/rps <rock/paper/scissors>** - Play Rock, Paper, Scissors\n"
+        "**n/tictactoe @opponent** - Play Tic Tac Toe against a friend\n"
+        "**n/tttmove <1-9>** - Choose a position on the board\n"
+        "**n/connect4 @opponent** - Play Connect 4 against a friend\n"
+        "**n/c4move <1-7>** - Choose a column (1–7)\n"
+        "**n/rpg** - Interactive text RPG (type choices directly, no prefix needed)\n"
+        "**n/spellduel @opponent** - Engage in a spell duel (type actions directly)\n"
+        "**n/rapbattle @opponent** - Rap battle your opponent (type comebacks directly)\n"
+        "**n/wordchain** - Start a word chain game\n"
+        "**n/endwordchain** - End the word chain (admin/mod only)"
     ), inline=False)
 
-    embed.add_field(name="**✚ Other**", value="n/help - Show this message", inline=False)
-    embed.set_footer(text=f"Made by @captainn29 • Requested by {ctx.author}", icon_url=ctx.author.display_avatar.url)
+    embed.add_field(name="**✚ Other**", value="**n/help** - Show this message", inline=False)
+
+    embed.set_footer(
+        text=f"Made by @captainn29 • Requested by {ctx.author}",
+        icon_url=ctx.author.display_avatar.url
+    )
+
     await ctx.send(embed=embed)
 
 # ------------------- Basic Commands -----------------------
@@ -529,21 +526,27 @@ async def eightball(ctx, *, question: str):
     ]
     await ctx.send(f"🎱 **Question:** {question}\n**Answer:** {random.choice(responses)}")
 
-@bot.command()
+from discord.ext import commands
+import aiohttp, asyncio, random, discord
+
+@commands.cooldown(1, 10, commands.BucketType.user)
+@bot.command(name="meme")
 async def meme(ctx):
-    """
-    Fetch a random meme from meme-api.com
-    """
+    """Fetch a random meme from meme-api.com (with cooldown)"""
     async with aiohttp.ClientSession() as session:
         try:
-            async with session.get("https://meme-api.com/gimme") as resp:
+            # Fetch meme from API
+            async with session.get(
+                "https://meme-api.com/gimme",
+                timeout=aiohttp.ClientTimeout(total=10)
+            ) as resp:
                 if resp.status != 200:
-                    return await ctx.send("❌ **[Failed to fetch meme — API returned an error.]**")
+                    raise Exception(f"Bad response: {resp.status}")
 
                 data = await resp.json()
-                title = data.get("title")
-                subreddit = data.get("subreddit")
-                post_url = data.get("postLink")
+                title = data.get("title", "Random Meme")
+                subreddit = data.get("subreddit", "unknown")
+                post_url = data.get("postLink", "")
                 image_url = data.get("url")
 
                 embed = discord.Embed(
@@ -552,11 +555,40 @@ async def meme(ctx):
                     color=discord.Color.random()
                 )
                 embed.set_image(url=image_url)
-                embed.set_footer(text=f"From r/{subreddit} • Requested by {ctx.author}")
+                embed.set_footer(
+                    text=f"From r/{subreddit} • Requested by {ctx.author.display_name}"
+                )
+
                 await ctx.send(embed=embed)
 
-        except Exception as e:
-            await ctx.send(f"❌ **[Error fetching meme: {e}]**")
+        except asyncio.TimeoutError:
+            await ctx.send("⏰ **The meme API took too long to respond! Try again soon.**")
+
+        except aiohttp.ClientError as e:
+            await ctx.send(f"🌐 **Network error while fetching meme:** `{e}`")
+
+        except Exception:
+            # Fallback meme if API fails
+            fallback_memes = [
+                "https://i.redd.it/q9l8tlfp6ik71.jpg",
+                "https://i.imgur.com/fY4dWUz.jpeg",
+                "https://i.redd.it/z3hr7s3klpm81.jpg"
+            ]
+            embed = discord.Embed(
+                title="😂 Meme API failed — here’s a backup meme!",
+                color=discord.Color.orange()
+            )
+            embed.set_image(url=random.choice(fallback_memes))
+            await ctx.send(embed=embed)
+
+
+@meme.error
+async def meme_error(ctx, error):
+    """Handle cooldown errors nicely"""
+    if isinstance(error, commands.CommandOnCooldown):
+        await ctx.send(
+            f"🕒 Slow down {ctx.author.mention}! Try again in `{error.retry_after:.1f}` seconds."
+        )
 
 @bot.command()
 async def rps(ctx, choice: str):
@@ -998,6 +1030,88 @@ async def end_rapbattle(ctx):
         winner = "Tie!"
 
     await ctx.send(f"🏆 The rap battle winner is: **{winner}**!\n{winner_text}")
+
+import asyncio
+from discord.ext import commands
+
+# Track active games per channel
+active_wordchain = {}
+
+@bot.command(name="wordchain")
+async def wordchain(ctx, starting_word: str):
+    """Start a never-ending word chain game."""
+    channel = ctx.channel
+
+    if channel.id in active_wordchain:
+        await ctx.send("⚠️ A word chain is already running in this channel!")
+        return
+
+    active_wordchain[channel.id] = {
+        "current_word": starting_word.lower(),
+        "last_user": ctx.author.id
+    }
+
+    await ctx.send(
+        f"🔤 **Word Chain Started!**\n"
+        f"Starting word: **{starting_word}**\n"
+        f"Next word must start with **{starting_word[-1].upper()}**!\n"
+        f"Type your word (no prefix needed). Game will continue forever until stopped or broken!"
+    )
+
+    def check(msg):
+        return (
+            msg.channel == channel
+            and not msg.author.bot
+            and msg.content.isalpha()  # only allow alphabetic words
+        )
+
+    while True:
+        try:
+            msg = await bot.wait_for("message", check=check)
+            word = msg.content.lower()
+
+            game = active_wordchain.get(channel.id)
+            if not game:
+                break  # game manually ended
+
+            last_word = game["current_word"]
+            last_user = game["last_user"]
+
+            if msg.author.id == last_user:
+                await channel.send(f"🚫 {msg.author.mention}, you can’t play twice in a row!")
+                continue
+
+            if word[0] != last_word[-1]:
+                await channel.send(
+                    f"❌ {msg.author.mention} broke the chain!\n"
+                    f"Word must start with **{last_word[-1].upper()}**."
+                )
+                del active_wordchain[channel.id]
+                break
+
+            # valid move
+            game["current_word"] = word
+            game["last_user"] = msg.author.id
+            await channel.send(
+                f"✅ **{word.capitalize()}** accepted! Next word must start with **{word[-1].upper()}**."
+            )
+
+        except Exception as e:
+            await channel.send(f"⚠️ Error: `{e}`")
+            break
+
+
+@bot.command(name="endwordchain")
+@commands.has_permissions(manage_messages=True)
+async def endwordchain(ctx):
+    """Manually end an ongoing word chain game."""
+    channel = ctx.channel
+    if channel.id not in active_wordchain:
+        await ctx.send("❌ No active word chain in this channel.")
+        return
+
+    del active_wordchain[channel.id]
+    await ctx.send("🛑 The word chain has been ended by a moderator.")
 
 # ------------------- Poll & Announce -----------------------
 DURATION_TOKEN_RE = re.compile(r"^(\d+)([wdhm])$")
