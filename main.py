@@ -140,7 +140,7 @@ async def help_command(ctx):
     view = View(timeout=360)  # 6-minute timeout
 
     # Navigation Buttons
-    back = Button(label="Previous", style=discord.ButtonStyle.secondary)
+       back = Button(label="Previous", style=discord.ButtonStyle.secondary)
     next = Button(label="Next", style=discord.ButtonStyle.secondary)
 
     async def update_page(interaction):
@@ -149,17 +149,13 @@ async def help_command(ctx):
     async def next_callback(interaction):
         nonlocal current
         if current < len(pages) - 1:
-    current += 1
-await update_page(interaction)
-
+            current += 1
         await update_page(interaction)
 
     async def back_callback(interaction):
         nonlocal current
         if current > 0:
-    current -= 1
-await update_page(interaction)
-
+            current -= 1
         await update_page(interaction)
 
     next.callback = next_callback
@@ -169,6 +165,7 @@ await update_page(interaction)
     view.add_item(next)
 
     await ctx.send(embed=pages[current], view=view)
+
 # ------------------- Basic Commands -----------------------
 @bot.command()
 async def ping(ctx):
