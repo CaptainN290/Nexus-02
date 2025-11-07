@@ -137,32 +137,40 @@ async def help_command(ctx):
     pages = [cover, mod, channel, roles, info, fun, other]
     current = 0
 
+    # Create a View object for handling buttons
+    view = View(timeout=360)  # 6-minute timeout
+
     # Navigation Buttons
     back = Button(label="Previous", style=discord.ButtonStyle.secondary)
     next = Button(label="Next", style=discord.ButtonStyle.secondary)
 
-
+    # Update the page when a button is clicked
     async def update_page(interaction):
         await interaction.response.edit_message(embed=pages[current], view=view)
 
+    # Move to the next page when "Next" is clicked
     async def next_callback(interaction):
         nonlocal current
         if current < len(pages) - 1:
             current += 1
         await update_page(interaction)
 
+    # Move to the previous page when "Back" is clicked
     async def back_callback(interaction):
         nonlocal current
         if current > 0:
             current -= 1
         await update_page(interaction)
 
+    # Assign button callbacks
     next.callback = next_callback
     back.callback = back_callback
 
+    # Add the buttons to the view
     view.add_item(back)
     view.add_item(next)
 
+    # Send the message with the first page
     await ctx.send(embed=pages[current], view=view)
 
 # ------------------- Basic Commands -----------------------
