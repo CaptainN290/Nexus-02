@@ -53,9 +53,6 @@ async def on_ready():
 from discord.ui import View, Button
 import discord
 
-# Remove default help command so we can define our own
-bot.remove_command('help')
-
 @bot.command(name="help")
 async def help_command(ctx):
     # === PAGE 1: Nexus Cover ===
@@ -151,12 +148,18 @@ async def help_command(ctx):
 
     async def next_callback(interaction):
         nonlocal current
-        current = (current + 1) % len(pages)
+        if current < len(pages) - 1:
+    current += 1
+await update_page(interaction)
+
         await update_page(interaction)
 
     async def back_callback(interaction):
         nonlocal current
-        current = (current - 1) % len(pages)
+        if current > 0:
+    current -= 1
+await update_page(interaction)
+
         await update_page(interaction)
 
     next.callback = next_callback
