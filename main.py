@@ -55,123 +55,104 @@ import discord
 
 @bot.command(name="help")
 async def help_command(ctx):
-    # === PAGE 1: Nexus Cover ===
-    cover = discord.Embed(color=discord.Color.gold())
-    cover.set_image(url="https://cdn.discordapp.com/attachments/1421960903603130580/1436434756014309537/image.jpg?ex=690f979d&is=690e461d&hm=c1ddcbd8c6fab9dd0d481a6ea1d30d77f36214ee953e80c08772a4a487c2b5ec&")
-    cover.set_footer(text="𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 • 𝐂𝐨𝐦𝐦𝐚𝐧𝐝𝐬 𝐈𝐧𝐝𝐞𝐱")
+    # === Full Help Command ===
+    help_embed = discord.Embed(color=discord.Color.gold())
+    help_embed.set_title("𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 • Commands Index")  # Custom font for Nexus
+    help_embed.set_footer(text="Made by @captainn29")  # Footer for credit
 
-    # === PAGE 2: Moderation ===
-    mod = discord.Embed(title="⛊ **Moderation**", color=discord.Color.blue())
-    mod.description = (
-        "**n/kick @user <reason>** - Kick a member\n"
-        "**n/ban @user <reason>** - Ban a member\n"
-        "**n/unban <user_id>** - Unban a user\n"
-        "**n/timeout @user <minutes> [reason]** - Timeout a member\n"
-        "**n/removetimeout @user** - Remove a timeout\n"
-        "**n/mute @user [reason]** - Mute a member\n"
-        "**n/unmute @user** - Unmute a member\n"
-        "**n/warn @user [reason]** - Warn a member\n"
-        "**n/snipe [0-5] [#channel]** - Retrieve deleted messages\n"
-        "**n/clear <amount> [images/users]** - Clear messages"
+    # Moderation Section
+    help_embed.add_field(
+        name="⛊ **Moderation**",
+        value=(
+            "**n/kick @user <reason>** - Kick a member\n"
+            "**n/ban @user <reason>** - Ban a member\n"
+            "**n/unban <user_id>** - Unban a user\n"
+            "**n/timeout @user <minutes> [reason]** - Timeout a member\n"
+            "**n/removetimeout @user** - Remove a timeout\n"
+            "**n/mute @user [reason]** - Mute a member\n"
+            "**n/unmute @user** - Unmute a member\n"
+            "**n/warn @user [reason]** - Warn a member\n"
+            "**n/snipe [0-5] [#channel]** - Retrieve deleted messages\n"
+            "**n/clear <amount> [images/users]** - Clear messages"
+        ),
+        inline=False
     )
 
-    # === PAGE 3: Channel ===
-    channel = discord.Embed(title="⚙︎ **Channel**", color=discord.Color.blue())
-    channel.description = (
-        "**n/slowmode <seconds>** - Set slowmode delay\n"
-        "**n/lock** - Lock the channel\n"
-        "**n/unlock** - Unlock the channel"
+    # Channel Section
+    help_embed.add_field(
+        name="⚙︎ **Channel**",
+        value=(
+            "**n/slowmode <seconds>** - Set slowmode delay\n"
+            "**n/lock** - Lock the channel\n"
+            "**n/unlock** - Unlock the channel"
+        ),
+        inline=False
     )
 
-    # === PAGE 4: Roles ===
-    roles = discord.Embed(title="𐀪 **Roles**", color=discord.Color.blue())
-    roles.description = (
-        "**n/addrole @user @role** - Give a role\n"
-        "**n/removerole @user @role** - Remove a role\n"
-        "**n/rolecatalog** - View all roles"
+    # Roles Section
+    help_embed.add_field(
+        name="𐀪 **Roles**",
+        value=(
+            "**n/addrole @user @role** - Give a role\n"
+            "**n/removerole @user @role** - Remove a role\n"
+            "**n/rolecatalog** - View all roles"
+        ),
+        inline=False
     )
 
-    # === PAGE 5: Info ===
-    info = discord.Embed(title="𝒊 **Info**", color=discord.Color.blue())
-    info.description = (
-        "**n/userinfo @user** - View user info\n"
-        "**n/serverinfo** - Server info\n"
-        "**n/serverbanner** - Server banner\n"
-        "**n/avatar @user** - User avatar\n"
-        "**n/ping** - Bot latency\n"
-        "**n/time** - Current UTC time\n"
-        "**n/status** - Bot & web status\n"
-        "**n/invite** - Invite link"
+    # Info Section
+    help_embed.add_field(
+        name="𝒊 **Info**",
+        value=(
+            "**n/userinfo @user** - View user info\n"
+            "**n/serverinfo** - Server info\n"
+            "**n/serverbanner** - Server banner\n"
+            "**n/avatar @user** - User avatar\n"
+            "**n/ping** - Bot latency\n"
+            "**n/time** - Current UTC time\n"
+            "**n/status** - Bot & web status\n"
+            "**n/invite** - Invite link"
+        ),
+        inline=False
     )
 
-    # === PAGE 6: Fun & Utility ===
-    fun = discord.Embed(title="☻ **Fun & Utility**", color=discord.Color.blue())
-    fun.description = (
-        "**n/say <message>** - Repeat your message\n"
-        "**n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
-        "**n/announce <message>** - Announce message\n"
-        "**n/hug @user** - Hug someone\n"
-        "**n/hugall** - Hug everyone\n"
-        "**n/kiss @user** - Kiss someone\n"
-        "**n/flipcoin** - Flip a coin\n"
-        "**n/roll [sides]** or **XdY** - Roll dice\n"
-        "**n/8ball <question>** - Magic 8ball\n"
-        "**n/meme** - Random meme\n"
-        "**n/rps <rock/paper/scissors>** - Play RPS\n"
-        "**n/tictactoe @opponent** - Tic Tac Toe\n"
-        "**n/tttmove <1-9>** - Move in Tic Tac Toe\n"
-        "**n/connect4 @opponent** - Connect 4\n"
-        "**n/c4move <1-7>** - Connect 4 move\n"
-        "**n/rpg** - Interactive text RPG\n"
-        "**n/spellduel @opponent** - Spell duel\n"
-        "**n/rapbattle @opponent** - Rap battle\n"
-        "**n/wordchain** - Word chain game\n"
-        "**n/endwordchain** - End word chain"
+    # Fun & Utility Section
+    help_embed.add_field(
+        name="☻ **Fun & Utility**",
+        value=(
+            "**n/say <message>** - Repeat your message\n"
+            "**n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
+            "**n/announce <message>** - Announce message\n"
+            "**n/hug @user** - Hug someone\n"
+            "**n/hugall** - Hug everyone\n"
+            "**n/kiss @user** - Kiss someone\n"
+            "**n/flipcoin** - Flip a coin\n"
+            "**n/roll [sides]** or **XdY** - Roll dice\n"
+            "**n/8ball <question>** - Magic 8ball\n"
+            "**n/meme** - Random meme\n"
+            "**n/rps <rock/paper/scissors>** - Play RPS\n"
+            "**n/tictactoe @opponent** - Tic Tac Toe\n"
+            "**n/tttmove <1-9>** - Move in Tic Tac Toe\n"
+            "**n/connect4 @opponent** - Connect 4\n"
+            "**n/c4move <1-7>** - Connect 4 move\n"
+            "**n/rpg** - Interactive text RPG\n"
+            "**n/spellduel @opponent** - Spell duel\n"
+            "**n/rapbattle @opponent** - Rap battle\n"
+            "**n/wordchain** - Word chain game\n"
+            "**n/endwordchain** - End word chain"
+        ),
+        inline=False
     )
 
-    # === PAGE 7: Other ===
-    other = discord.Embed(title="✚ **Other**", color=discord.Color.blue())
-    other.description = "**n/help** - Show this message"
+    # Other Section
+    help_embed.add_field(
+        name="✚ **Other**",
+        value="**n/help** - Show this message",
+        inline=False
+    )
 
-    # === PAGE SYSTEM ===
-    pages = [cover, mod, channel, roles, info, fun, other]
-    current = 0
-
-    # Create a View object for handling buttons
-    view = View(timeout=360)  # 6-minute timeout
-
-    # Navigation Buttons
-    back = Button(label="Previous", style=discord.ButtonStyle.secondary)
-    next = Button(label="Next", style=discord.ButtonStyle.secondary)
-
-    # Update the page when a button is clicked
-    async def update_page(interaction):
-        await interaction.response.edit_message(embed=pages[current], view=view)
-
-    # Move to the next page when "Next" is clicked
-    async def next_callback(interaction):
-        nonlocal current
-        if current < len(pages) - 1:
-            current += 1
-        await update_page(interaction)
-
-    # Move to the previous page when "Back" is clicked
-    async def back_callback(interaction):
-        nonlocal current
-        if current > 0:
-            current -= 1
-        await update_page(interaction)
-
-    # Assign button callbacks
-    next.callback = next_callback
-    back.callback = back_callback
-
-    # Add the buttons to the view
-    view.add_item(back)
-    view.add_item(next)
-
-    # Send the message with the first page
-    await ctx.send(embed=pages[current], view=view)
+    # Send the message without pagination (one big embed)
+    await ctx.send(embed=help_embed)
 
 # ------------------- Basic Commands -----------------------
 @bot.command()
