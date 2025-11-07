@@ -47,15 +47,15 @@ def no_perm_msg(action):
 async def on_ready():
     print(f"✅ [Logged in as {bot.user}]")
 
-# ------------------- HELP COMMAND -----------------------
-from discord.ext import commands
+# -------------------- HELP COMMAND --------------------
 from discord.ui import View, Button
 import discord
 
-bot = commands.Bot(command_prefix="n/", intents=discord.Intents.all())
+# Remove default help command so we can define our own
+bot.remove_command('help')
 
-@bot.command()
-async def help(ctx):
+@bot.command(name="help")
+async def help_command(ctx):
     # === PAGE 1: Nexus Cover ===
     cover = discord.Embed(color=discord.Color.gold())
     cover.set_image(url="https://cdn.discordapp.com/attachments/1421960903603130580/1436434756014309537/image.jpg?ex=690f979d&is=690e461d&hm=c1ddcbd8c6fab9dd0d481a6ea1d30d77f36214ee953e80c08772a4a487c2b5ec&")
