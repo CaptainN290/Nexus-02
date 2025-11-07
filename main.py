@@ -140,7 +140,7 @@ async def help_command(ctx):
     view = View(timeout=360)  # 6-minute timeout
 
     # Navigation Buttons
-       back = Button(label="Previous", style=discord.ButtonStyle.secondary)
+    back = Button(label="Previous", style=discord.ButtonStyle.secondary)
     next = Button(label="Next", style=discord.ButtonStyle.secondary)
 
     async def update_page(interaction):
