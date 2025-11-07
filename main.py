@@ -31,12 +31,14 @@ def run_flask():
 threading.Thread(target=run_flask, daemon=True).start()
 
 # ------------------- Discord Bot Setup -----------------------
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
+from discord.ext import commands
+import discord
+from datetime import datetime, timezone
 
+intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="n/", intents=intents, help_command=None)
-bot_start_time = datetime.utcnow()
+
+bot_start_time = datetime.now(timezone.utc)
 
 # ------------------- Helper -----------------------
 def no_perm_msg(action):
