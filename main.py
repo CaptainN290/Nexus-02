@@ -48,82 +48,122 @@ async def on_ready():
     print(f"✅ [Logged in as {bot.user}]")
 
 # ------------------- HELP COMMAND -----------------------
+from discord.ext import commands
+from discord.ui import View, Button
+import discord
+
+bot = commands.Bot(command_prefix="n/", intents=discord.Intents.all())
+
 @bot.command()
 async def help(ctx):
-    embed = discord.Embed(
-        title="**➤ 𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 - 𝐂𝐨𝐦𝐦𝐚𝐧𝐝𝐬 𝐋𝐢𝐬𝐭**",
-        description="• List of all working commands",
-        color=discord.Color.blue()
-    )
+    # === PAGE 1: Nexus Cover ===
+    cover = discord.Embed(color=discord.Color.gold())
+    cover.set_image(url="https://cdn.discordapp.com/attachments/1421960903603130580/1436434756014309537/image.jpg?ex=690f979d&is=690e461d&hm=c1ddcbd8c6fab9dd0d481a6ea1d30d77f36214ee953e80c08772a4a487c2b5ec&")
+    cover.set_footer(text="𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 • 𝐂𝐨𝐦𝐦𝐚𝐧𝐝𝐬 𝐈𝐧𝐝𝐞𝐱")
 
-    embed.add_field(name="**⛊ Moderation**", value=(
-        "**n/kick @user <reason>** - Kick a member (requires permissions)\n"
-        "**n/ban @user <reason>** - Ban a member (requires permissions)\n"
+    # === PAGE 2: Moderation ===
+    mod = discord.Embed(title="⛊ **Moderation**", color=discord.Color.blue())
+    mod.description = (
+        "**n/kick @user <reason>** - Kick a member\n"
+        "**n/ban @user <reason>** - Ban a member\n"
         "**n/unban <user_id>** - Unban a user\n"
         "**n/timeout @user <minutes> [reason]** - Timeout a member\n"
-        "**n/removetimeout @user** - Remove a timeout from a member\n"
+        "**n/removetimeout @user** - Remove a timeout\n"
         "**n/mute @user [reason]** - Mute a member\n"
         "**n/unmute @user** - Unmute a member\n"
         "**n/warn @user [reason]** - Warn a member\n"
-        "**n/snipe [0-5] [#channel]** - Retrieve recently deleted messages\n"
-        "**n/clear <amount> [images/users]** - Delete a certain amount of messages"
-    ), inline=False)
-
-    embed.add_field(name="**⚙︎ Channel**", value=(
-        "**n/slowmode <seconds>** - Set a slowmode delay in the channel\n"
-        "**n/lock** - Lock the current channel\n"
-        "**n/unlock** - Unlock the current channel"
-    ), inline=False)
-
-    embed.add_field(name="**𐀪 Roles**", value=(
-        "**n/addrole @user @role** - Give a member a specific role\n"
-        "**n/removerole @user @role** - Remove a role from a member\n"
-        "**n/rolecatalog** - View all roles (limit: 20)"
-    ), inline=False)
-
-    embed.add_field(name="**𝒊 Info**", value=(
-        "**n/userinfo @user** - View info about a user\n"
-        "**n/serverinfo** - View server info\n"
-        "**n/serverbanner** - Display the server banner\n"
-        "**n/avatar @user** - View a member's avatar\n"
-        "**n/ping** - Show bot latency\n"
-        "**n/time** - Display current UTC time\n"
-        "**n/status** - Show bot and web service status\n"
-        "**n/invite** - Get the bot's invite link"
-    ), inline=False)
-
-    embed.add_field(name="**☻ Fun & Utility**", value=(
-        "**n/say <message>** - Make the bot repeat your message\n"
-        "**n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
-        "**n/announce <message>** - Announce a message\n"
-        "**n/hug @user** - Hug a member\n"
-        "**n/hugall** - Hug everyone\n"
-        "**n/kiss @user** - Kiss a member\n"
-        "**n/flipcoin** - Flip a coin\n"
-        "**n/roll [sides]** or **n/roll XdY** - Roll dice\n"
-        "**n/8ball <question>** - Ask the magic 8ball\n"
-        "**n/meme** - Get a random meme\n"
-        "**n/rps <rock/paper/scissors>** - Play Rock, Paper, Scissors\n"
-        "**n/tictactoe @opponent** - Play Tic Tac Toe against a friend\n"
-        "**n/tttmove <1-9>** - Choose a position on the board\n"
-        "**n/connect4 @opponent** - Play Connect 4 against a friend\n"
-        "**n/c4move <1-7>** - Choose a column (1–7)\n"
-        "**n/rpg** - Interactive text RPG (type choices directly, no prefix needed)\n"
-        "**n/spellduel @opponent** - Engage in a spell duel (type actions directly)\n"
-        "**n/rapbattle @opponent** - Rap battle your opponent (type comebacks directly)\n"
-        "**n/wordchain** - Start a word chain game\n"
-        "**n/endwordchain** - End the word chain (admin/mod only)"
-    ), inline=False)
-
-    embed.add_field(name="**✚ Other**", value="**n/help** - Show this message", inline=False)
-
-    embed.set_footer(
-        text=f"Made by @captainn29 • Requested by {ctx.author}",
-        icon_url=ctx.author.display_avatar.url
+        "**n/snipe [0-5] [#channel]** - Retrieve deleted messages\n"
+        "**n/clear <amount> [images/users]** - Clear messages"
     )
 
-    await ctx.send(embed=embed)
+    # === PAGE 3: Channel ===
+    channel = discord.Embed(title="⚙︎ **Channel**", color=discord.Color.blue())
+    channel.description = (
+        "**n/slowmode <seconds>** - Set slowmode delay\n"
+        "**n/lock** - Lock the channel\n"
+        "**n/unlock** - Unlock the channel"
+    )
 
+    # === PAGE 4: Roles ===
+    roles = discord.Embed(title="𐀪 **Roles**", color=discord.Color.blue())
+    roles.description = (
+        "**n/addrole @user @role** - Give a role\n"
+        "**n/removerole @user @role** - Remove a role\n"
+        "**n/rolecatalog** - View all roles"
+    )
+
+    # === PAGE 5: Info ===
+    info = discord.Embed(title="𝒊 **Info**", color=discord.Color.blue())
+    info.description = (
+        "**n/userinfo @user** - View user info\n"
+        "**n/serverinfo** - Server info\n"
+        "**n/serverbanner** - Server banner\n"
+        "**n/avatar @user** - User avatar\n"
+        "**n/ping** - Bot latency\n"
+        "**n/time** - Current UTC time\n"
+        "**n/status** - Bot & web status\n"
+        "**n/invite** - Invite link"
+    )
+
+    # === PAGE 6: Fun & Utility ===
+    fun = discord.Embed(title="☻ **Fun & Utility**", color=discord.Color.blue())
+    fun.description = (
+        "**n/say <message>** - Repeat your message\n"
+        "**n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
+        "**n/announce <message>** - Announce message\n"
+        "**n/hug @user** - Hug someone\n"
+        "**n/hugall** - Hug everyone\n"
+        "**n/kiss @user** - Kiss someone\n"
+        "**n/flipcoin** - Flip a coin\n"
+        "**n/roll [sides]** or **XdY** - Roll dice\n"
+        "**n/8ball <question>** - Magic 8ball\n"
+        "**n/meme** - Random meme\n"
+        "**n/rps <rock/paper/scissors>** - Play RPS\n"
+        "**n/tictactoe @opponent** - Tic Tac Toe\n"
+        "**n/tttmove <1-9>** - Move in Tic Tac Toe\n"
+        "**n/connect4 @opponent** - Connect 4\n"
+        "**n/c4move <1-7>** - Connect 4 move\n"
+        "**n/rpg** - Interactive text RPG\n"
+        "**n/spellduel @opponent** - Spell duel\n"
+        "**n/rapbattle @opponent** - Rap battle\n"
+        "**n/wordchain** - Word chain game\n"
+        "**n/endwordchain** - End word chain"
+    )
+
+    # === PAGE 7: Other ===
+    other = discord.Embed(title="✚ **Other**", color=discord.Color.blue())
+    other.description = "**n/help** - Show this message"
+
+    # === PAGE SYSTEM ===
+    pages = [cover, mod, channel, roles, info, fun, other]
+    current = 0
+
+    view = View(timeout=360)  # 6-minute timeout
+
+    # Navigation Buttons
+    back = Button(label="Previous", style=discord.ButtonStyle.secondary)
+    next = Button(label="Next", style=discord.ButtonStyle.secondary)
+
+    async def update_page(interaction):
+        await interaction.response.edit_message(embed=pages[current], view=view)
+
+    async def next_callback(interaction):
+        nonlocal current
+        current = (current + 1) % len(pages)
+        await update_page(interaction)
+
+    async def back_callback(interaction):
+        nonlocal current
+        current = (current - 1) % len(pages)
+        await update_page(interaction)
+
+    next.callback = next_callback
+    back.callback = back_callback
+
+    view.add_item(back)
+    view.add_item(next)
+
+    await ctx.send(embed=pages[current], view=view)
 # ------------------- Basic Commands -----------------------
 @bot.command()
 async def ping(ctx):
@@ -562,10 +602,10 @@ async def meme(ctx):
                 await ctx.send(embed=embed)
 
         except asyncio.TimeoutError:
-            await ctx.send("⏰ **The meme API took too long to respond! Try again soon.**")
+            await ctx.send("⏰ **[The meme API took too long to respond! Try again soon]**")
 
         except aiohttp.ClientError as e:
-            await ctx.send(f"🌐 **Network error while fetching meme:** `{e}`")
+            await ctx.send(f"🌐 **[Network error while fetching meme: `{e}` ]**")
 
         except Exception:
             # Fallback meme if API fails
@@ -587,7 +627,7 @@ async def meme_error(ctx, error):
     """Handle cooldown errors nicely"""
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.send(
-            f"🕒 Slow down {ctx.author.mention}! Try again in `{error.retry_after:.1f}` seconds."
+            f"🕒 **[Slow down {ctx.author.mention}! Try again in `{error.retry_after:.1f}` seconds]**"
         )
 
 @bot.command()
@@ -596,7 +636,7 @@ async def rps(ctx, choice: str):
     choices = ["rock", "paper", "scissors"]
     choice = choice.lower()
     if choice not in choices:
-        return await ctx.send("❌ Choose rock, paper, or scissors!")
+        return await ctx.send("❌ **[Choose rock, paper, or scissors!]**")
 
     bot_choice = random.choice(choices)
     if choice == bot_choice:
@@ -608,7 +648,7 @@ async def rps(ctx, choice: str):
     else:
         result = "You lose!"
 
-    await ctx.send(f"🤖 I chose **{bot_choice}**.\n🎉 {result}")
+    await ctx.send(f"🤖 **[I chose **{bot_choice}**.\n🎉 {result} ]**")
 
 active_ttt = {}
 
@@ -625,21 +665,21 @@ async def tictactoe(ctx, opponent: discord.Member):
     def format_board(b):
         return f"{b[0]}{b[1]}{b[2]}\n{b[3]}{b[4]}{b[5]}\n{b[6]}{b[7]}{b[8]}"
 
-    await ctx.send(f"🎮 Tic-Tac-Toe started! {ctx.author.mention} vs {opponent.mention}\n\n{format_board(board)}\nIt's {turn.mention}'s turn! Pick a position 1-9 with `n/tttmove <pos>`")
+    await ctx.send(f"🎮 **[Tic-Tac-Toe started! {ctx.author.mention} vs {opponent.mention} ]**\n\n{format_board(board)}\nIt's {turn.mention}'s turn!] Pick a position 1-9 with `n/tttmove <pos>`")
 
 @bot.command()
 async def tttmove(ctx, pos: int):
     """Make a move in Tic-Tac-Toe"""
     game = active_ttt.get(ctx.channel.id)
     if not game:
-        return await ctx.send("❌ No active game here.")
+        return await ctx.send("❌ **[No active game here]**")
     if ctx.author != game["turn"]:
-        return await ctx.send("❌ It's not your turn.")
+        return await ctx.send("❌ **[It's not your turn]**")
     if pos < 1 or pos > 9:
-        return await ctx.send("❌ Position must be 1-9.")
+        return await ctx.send("❌ **[Position must be 1-9]**")
     board = game["board"]
     if board[pos-1] != "⬜":
-        return await ctx.send("❌ That spot is already taken.")
+        return await ctx.send("❌ **[That spot is already taken]**")
 
     mark = "❌" if ctx.author == game["player1"] else "⭕"
     board[pos-1] = mark
@@ -671,7 +711,7 @@ ROWS, COLS = 6, 7
 async def connect4(ctx, opponent: discord.Member):
     """Start Connect 4"""
     if ctx.channel.id in active_c4:
-        return await ctx.send("❌ A Connect 4 game is already active here.")
+        return await ctx.send("❌ **[A Connect 4 game is already active here]**")
 
     board = [["⚪" for _ in range(COLS)] for _ in range(ROWS)]
     turn = ctx.author
@@ -684,18 +724,18 @@ async def connect4(ctx, opponent: discord.Member):
         s += "1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣"
         return s
 
-    await ctx.send(f"🎮 Connect 4 started! {ctx.author.mention} vs {opponent.mention}\n\n{format_board(board)}\nUse `n/c4move <column>` to play!")
+    await ctx.send(f"🎮 **[Connect 4 started!]** {ctx.author.mention} vs {opponent.mention}\n\n{format_board(board)}\nUse `n/c4move <column>` to play!")
 
 @bot.command()
 async def c4move(ctx, col: int):
     """Make a move in Connect 4"""
     game = active_c4.get(ctx.channel.id)
     if not game:
-        return await ctx.send("❌ No active Connect 4 game.")
+        return await ctx.send("❌ **[No active Connect 4 game]**")
     if ctx.author != game["turn"]:
-        return await ctx.send("❌ It's not your turn.")
+        return await ctx.send("❌ **[It's not your turn]**")
     if not 1 <= col <= COLS:
-        return await ctx.send("❌ Column must be 1-7.")
+        return await ctx.send("❌ **[Column must be 1-7]**")
 
     board = game["board"]
     col -= 1
@@ -802,9 +842,9 @@ adventure_rooms = {
 async def dragon_fight_outcome(ctx, user):
     outcome = random.choice(["win", "lose"])
     if outcome == "win":
-        await ctx.send("🎉 You slayed the dragon and found legendary treasure! You win!")
+        await ctx.send("🎉 **[You slayed the dragon and found legendary treasure! You win!]**")
     else:
-        await ctx.send("💀 The dragon overpowered you. You barely escape with your life.")
+        await ctx.send("💀 **[The dragon overpowered you. You died.]**")
     active_adventures.pop(user.id)
     player_stats.pop(user.id)
 
@@ -812,7 +852,7 @@ async def dragon_fight_outcome(ctx, user):
 @bot.command(name="rpg")
 async def mini_rpg(ctx):
     if ctx.author.id in active_adventures:
-        return await ctx.send("❌ You already have an active adventure!")
+        return await ctx.send("❌ **[You already have an active adventure]**")
 
     active_adventures[ctx.author.id] = "start"
     player_stats[ctx.author.id] = {"hp": 100, "items": []}
@@ -851,7 +891,7 @@ async def show_room(ctx, user):
             player_stats[user.id]["hp"] -= damage
             await ctx.send(f"💥 You struggled in the water and lost {damage} HP! Current HP: {player_stats[user.id]['hp']}")
             if player_stats[user.id]["hp"] <= 0:
-                await ctx.send("💀 You fainted! Adventure over.")
+                await ctx.send("💀 **[You Died. Adventure over.]**")
                 active_adventures.pop(user.id)
                 player_stats.pop(user.id)
                 return
@@ -861,7 +901,7 @@ async def show_room(ctx, user):
         active_adventures[user.id] = next_room
         await show_room(ctx, user)
     except asyncio.TimeoutError:
-        await ctx.send("⌛ Adventure timed out! Try again later.")
+        await ctx.send("⌛ **[Adventure timed out! Try again later.]**")
         active_adventures.pop(user.id)
         player_stats.pop(user.id)
 
@@ -877,7 +917,7 @@ SPELLS = {
 @bot.command()
 async def spellduel(ctx, member: discord.Member):
     if ctx.author.id in active_spell_duels or member.id in active_spell_duels:
-        return await ctx.send("❌ One of you is already in a duel!")
+        return await ctx.send("❌ **[One of you is already in a duel]**")
     
     hp = {ctx.author: 100, member: 100}
     turn_order = [ctx.author, member]
@@ -886,7 +926,7 @@ async def spellduel(ctx, member: discord.Member):
     active_spell_duels[ctx.author.id] = member.id
     active_spell_duels[member.id] = ctx.author.id
 
-    await ctx.send(f"🧙‍♂️ Spell Duel started: {ctx.author.mention} vs {member.mention}\nEach player has 100 HP.\nAvailable spells: {', '.join(SPELLS.keys())}")
+    await ctx.send(f"🧙‍♂️ **[Spell Duel started: {ctx.author.mention} vs {member.mention} ]**\nEach player has 100 HP.\nAvailable spells: {', '.join(SPELLS.keys())}")
 
     while all(hp[p] > 0 for p in turn_order):
         player = turn_order[current_turn]
@@ -926,14 +966,14 @@ active_rapbattles = {}  # Track active rap battles per channel
 async def rapbattle(ctx, opponent: discord.Member):
     """Challenge a user to a rap battle."""
     if ctx.author.id == opponent.id:
-        return await ctx.send("❌ You cannot rap battle yourself!")
+        return await ctx.send("❌ **[You cannot rap battle yourself]**")
     
     if ctx.channel.id in active_rapbattles:
-        return await ctx.send("❌ A rap battle is already active in this channel.")
+        return await ctx.send("❌ **[A rap battle is already active in this channel]**")
 
     # Send challenge embed
     embed = discord.Embed(
-        title="🎤 Rap Battle Challenge!",
+        title="🎤 **[Rap Battle Challenge!]**",
         description=f"{ctx.author.mention} has challenged {opponent.mention} to a rap battle!\nDo you accept?",
         color=discord.Color.purple()
     )
@@ -948,10 +988,10 @@ async def rapbattle(ctx, opponent: discord.Member):
     try:
         reaction, user = await bot.wait_for("reaction_add", check=check, timeout=60)
     except asyncio.TimeoutError:
-        return await ctx.send("⌛ Challenge timed out.")
+        return await ctx.send("⌛ **[Challenge timed out]**")
 
     if str(reaction.emoji) == "❌":
-        return await ctx.send(f"❌ {opponent.mention} declined the rap battle.")
+        return await ctx.send(f"❌ **[ {opponent.mention} declined the rap battle]**")
 
     # Start battle
     active_rapbattles[ctx.channel.id] = {
@@ -961,7 +1001,7 @@ async def rapbattle(ctx, opponent: discord.Member):
         "round": 1
     }
 
-    await ctx.send(f"🔥 Rap battle started between {ctx.author.mention} (🔥) and {opponent.mention} (😎)!\nTake turns sending your rap lines. 3 rounds total.")
+    await ctx.send(f"🔥 **[Rap battle started between {ctx.author.mention} (🔥) and {opponent.mention} (😎)!]**\nTake turns sending your rap lines. 3 rounds total.")
     await next_rap_turn(ctx)
 
 async def next_rap_turn(ctx):
@@ -976,10 +1016,10 @@ async def next_rap_turn(ctx):
         return m.author == player and m.channel == ctx.channel
 
     try:
-        msg = await bot.wait_for("message", check=check_msg, timeout=60)
+        msg = await bot.wait_for("message", check=check_msg, timeout=120)
         battle["lines"][player.id].append(msg.content)
     except asyncio.TimeoutError:
-        await ctx.send(f"⌛ {player.mention} took too long! Skipping turn.")
+        await ctx.send(f"⌛ **[ {player.mention} took too long! Skipping turn]**")
         battle["lines"][player.id].append("...")  # Empty line
 
     # Switch turn
@@ -1001,7 +1041,7 @@ async def end_rapbattle(ctx):
     p2_lines = battle["lines"][p2.id]
 
     embed = discord.Embed(
-        title="🎤 Rap Battle Ended! Time to vote!",
+        title="🎤 **[Rap Battle Ended! Time to vote!]**",
         description="React with 🔥 for **Player 1** or 😎 for **Player 2**",
         color=discord.Color.gold()
     )
@@ -1029,13 +1069,37 @@ async def end_rapbattle(ctx):
     else:
         winner = "Tie!"
 
-    await ctx.send(f"🏆 The rap battle winner is: **{winner}**!\n{winner_text}")
+    await ctx.send(f"🏆 **[The rap battle winner is: **{winner}**!\n{winner_text} ]**")
 
 import asyncio
+import aiohttp
 from discord.ext import commands
+
+bot = commands.Bot(command_prefix="!")
 
 # Track active games per channel
 active_wordchain = {}
+
+
+async def is_valid_english_word(word: str) -> bool:
+    """Check if a word exists in the English dictionary using the Free Dictionary API."""
+    url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word.lower()}"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return isinstance(data, list) and "word" in data[0]
+            return False
+
+
+def number_to_emoji(num: int) -> str:
+    """Convert a number into emoji digits (e.g. 123 -> 1️⃣2️⃣3️⃣)."""
+    emoji_map = {
+        "0": "0️⃣", "1": "1️⃣", "2": "2️⃣", "3": "3️⃣", "4": "4️⃣",
+        "5": "5️⃣", "6": "6️⃣", "7": "7️⃣", "8": "8️⃣", "9": "9️⃣"
+    }
+    return "".join(emoji_map.get(d, d) for d in str(num))
+
 
 @bot.command(name="wordchain")
 async def wordchain(ctx, starting_word: str):
@@ -1043,19 +1107,25 @@ async def wordchain(ctx, starting_word: str):
     channel = ctx.channel
 
     if channel.id in active_wordchain:
-        await ctx.send("⚠️ A word chain is already running in this channel!")
+        await ctx.send("⚠️ **[A word chain is already running in this channel]**")
+        return
+
+    # Validate starting word
+    if not await is_valid_english_word(starting_word):
+        await ctx.send(f"❌ '{starting_word}' is not a valid English word.")
         return
 
     active_wordchain[channel.id] = {
         "current_word": starting_word.lower(),
-        "last_user": ctx.author.id
+        "last_user": ctx.author.id,
+        "chain_length": 0,
+        "first_message_done": False
     }
 
     await ctx.send(
         f"🔤 **Word Chain Started!**\n"
         f"Starting word: **{starting_word}**\n"
-        f"Next word must start with **{starting_word[-1].upper()}**!\n"
-        f"Type your word (no prefix needed). Game will continue forever until stopped or broken!"
+        f"Next word must start with **{starting_word[-1].upper()}**!"
     )
 
     def check(msg):
@@ -1077,27 +1147,46 @@ async def wordchain(ctx, starting_word: str):
             last_word = game["current_word"]
             last_user = game["last_user"]
 
+            # Prevent same user twice
             if msg.author.id == last_user:
-                await channel.send(f"🚫 {msg.author.mention}, you can’t play twice in a row!")
+                await channel.send(f"🚫 **[ {msg.author.mention}, you can’t play twice in a row]**")
                 continue
 
+            # Check first letter rule
             if word[0] != last_word[-1]:
                 await channel.send(
-                    f"❌ {msg.author.mention} broke the chain!\n"
+                    f"❌ **[ {msg.author.mention} broke the chain]**\n"
                     f"Word must start with **{last_word[-1].upper()}**."
                 )
                 del active_wordchain[channel.id]
                 break
 
-            # valid move
+            # Validate dictionary
+            if not await is_valid_english_word(word):
+                await channel.send(f"📘 **[ {msg.author.mention}, '{word}' is not a valid English word]**")
+                continue
+
+            # ✅ Valid move
             game["current_word"] = word
             game["last_user"] = msg.author.id
-            await channel.send(
-                f"✅ **{word.capitalize()}** accepted! Next word must start with **{word[-1].upper()}**."
-            )
+            game["chain_length"] += 1
+
+            # React with emoji digits
+            chain_num = game["chain_length"]
+            for digit_emoji in number_to_emoji(chain_num):
+                await msg.add_reaction(digit_emoji)
+
+            # First message shows next letter, later ones just “accepted”
+            if not game["first_message_done"]:
+                await channel.send(
+                    f"✅ **{word.capitalize()}** accepted! Next word must start with **{word[-1].upper()}**."
+                )
+                game["first_message_done"] = True
+            else:
+                await channel.send(f"✅ **{word.capitalize()}** accepted!")
 
         except Exception as e:
-            await channel.send(f"⚠️ Error: `{e}`")
+            await channel.send(f"⚠️ **[Error: `{e}`]**")
             break
 
 
@@ -1107,11 +1196,11 @@ async def endwordchain(ctx):
     """Manually end an ongoing word chain game."""
     channel = ctx.channel
     if channel.id not in active_wordchain:
-        await ctx.send("❌ No active word chain in this channel.")
+        await ctx.send("❌ **[No active word chain in this channel]**")
         return
 
     del active_wordchain[channel.id]
-    await ctx.send("🛑 The word chain has been ended by a moderator.")
+    await ctx.send("🛑 **[The word chain has been ended by a moderator]**")
 
 # ------------------- Poll & Announce -----------------------
 DURATION_TOKEN_RE = re.compile(r"^(\d+)([wdhm])$")
