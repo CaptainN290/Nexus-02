@@ -137,11 +137,10 @@ async def help_command(ctx):
     pages = [cover, mod, channel, roles, info, fun, other]
     current = 0
 
-    view = View(timeout=360)  # 6-minute timeout
-
     # Navigation Buttons
     back = Button(label="Previous", style=discord.ButtonStyle.secondary)
     next = Button(label="Next", style=discord.ButtonStyle.secondary)
+
 
     async def update_page(interaction):
         await interaction.response.edit_message(embed=pages[current], view=view)
