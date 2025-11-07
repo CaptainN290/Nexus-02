@@ -1075,9 +1075,16 @@ async def end_rapbattle(ctx):
 
 import asyncio
 import aiohttp
+import discord
 from discord.ext import commands
 
-bot = commands.Bot(command_prefix="!")
+# Enable the default intents and the message content intent
+intents = discord.Intents.default()
+intents.message_content = True  # Enable message content intent to read messages
+
+# Create the bot with your custom prefix "n/"
+bot = commands.Bot(command_prefix="n/", intents=intents)
+
 
 # Track active games per channel
 active_wordchain = {}
