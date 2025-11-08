@@ -63,62 +63,63 @@ async def help_command(ctx):
         )
 
         embed.add_field(name="**⛊ Moderation**", value=(
-            "🔴 **n/kick @user <reason>** - Kick a member (requires permissions)\n"
-            "🔴 **n/ban @user <reason>** - Ban a member (requires permissions)\n"
-            "🔴 **n/unban <user_id>** - Unban a user\n"
-            "🔴 **n/timeout @user <minutes> [reason]** - Timeout a member\n"
-            "🔴 **n/removetimeout @user** - Remove a timeout from a member\n"
-            "🔴 **n/mute @user [reason]** - Mute a member\n"
-            "🔴 **n/unmute @user** - Unmute a member\n"
-            "🔴 **n/warn @user [reason]** - Warn a member\n"
-            "🔴 **n/snipe [0-5] [#channel]** - Retrieve recently deleted messages\n"
-            "🔴 **n/clear <amount> [images/users]** - Delete a certain amount of messages"
+            "**n/kick @user <reason>** - Kick a member (requires permissions)\n"
+            "**n/ban @user <reason>** - Ban a member (requires permissions)\n"
+            "**n/unban <user_id>** - Unban a user\n"
+            "**n/timeout @user <minutes> [reason]** - Timeout a member\n"
+            "**n/removetimeout @user** - Remove a timeout from a member\n"
+            "**n/mute @user [reason]** - Mute a member\n"
+            "**n/unmute @user** - Unmute a member\n"
+            "**n/warn @user [reason]** - Warn a member\n"
+            "**n/snipe [0-5] [#channel]** - Retrieve recently deleted messages\n"
+            "**n/clear <amount> [images/users]** - Delete a certain amount of messages"
         ), inline=False)
 
         embed.add_field(name="**⚙︎ Channel**", value=(
-            "🔘 **n/slowmode <seconds>** - Set a slowmode delay in the channel\n"
-            "🔘 **n/lock** - Lock the current channel\n"
-            "🔘 **n/unlock** - Unlock the current channel"
+            "**n/slowmode <seconds>** - Set a slowmode delay in the channel\n"
+            "**n/lock** - Lock the current channel\n"
+            "**n/unlock** - Unlock the current channel"
         ), inline=False)
 
         embed.add_field(name="**𐀪 Roles**", value=(
-            "🟣 **n/addrole @user @role** - Give a member a specific role\n"
-            "🟣 **n/removerole @user @role** - Remove a role from a member\n"
-            "🟣 **n/rolecatalog** - View all roles (limit: 20)"
+            "**n/addrole @user @role** - Give a member a specific role\n"
+            "**n/removerole @user @role** - Remove a role from a member\n"
+            "**n/rolecatalog** - View all roles (limit: 20)"
         ), inline=False)
 
         embed.add_field(name="**𝒊 Info**", value=(
-            "🔵 **n/userinfo @user** - View info about a user\n"
-            "🔵 **n/serverinfo** - View server info\n"
-            "🔵 **n/serverbanner** - Display the server banner\n"
-            "🔵 **n/avatar @user** - View a member's avatar\n"
-            "🔵 **n/ping** - Show bot latency\n"
-            "🔵 **n/time** - Display current UTC time\n"
-            "🔵 **n/status** - Show bot and web service status\n"
-            "🔵 **n/invite** - Get the bot's invite link"
+            "**n/userinfo @user** - View info about a user\n"
+            "**n/serverinfo** - View server info\n"
+            "**n/serverbanner** - Display the server banner\n"
+            "**n/avatar @user** - View a member's avatar\n"
+            "**n/ping** - Show bot latency\n"
+            "**n/time** - Display current UTC time\n"
+            "**n/status** - Show bot and web service status\n"
+            "**n/invite** - Get the bot's invite link"
         ), inline=False)
 
         embed.add_field(name="**☻ Fun & Utility**", value=(
-            "🟡 **n/say <message>** - Make the bot repeat your message\n"
-            "🟡 **n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
-            "🟡 **n/announce <message>** - Announce a message\n"
-            "🟡 **n/hug @user** - Hug a member\n"
-            "🟡 **n/hugall** - Hug everyone\n"
-            "🟡 **n/kiss @user** - Kiss a member\n"
-            "🟡 **n/flipcoin** - Flip a coin\n"
-            "🟡 **n/roll [sides]** or **n/roll XdY** - Roll dice\n"
-            "🟡 **n/8ball <question>** - Ask the magic 8ball\n"
-            "🟡 **n/meme** - Get a random meme\n"
-            "🟡 **n/rps <rock/paper/scissors>** - Play Rock, Paper, Scissors\n"
-            "🟡 **n/tictactoe @opponent** - Play Tic Tac Toe against a friend\n"
-            "🟡 **n/tttmove <1-9>** - Choose a position on the board\n"
-            "🟡 **n/connect4 @opponent** - Play Connect 4 against a friend\n"
-            "🟡 **n/c4move <1-7>** - Choose a column (1–7)\n"
-            "🟡 **n/rpg** - Interactive text RPG (type choices directly, no prefix needed)\n"
-            "🟡 **n/spellduel @opponent** - Engage in a spell duel (type actions directly)\n"
-            "🟡 **n/rapbattle @opponent** - Rap battle your opponent (type comebacks directly)\n"
-            "🟡 **n/wordchain** - Start a word chain game\n"
-            "🟡 **n/endwordchain** - End the word chain (admin/mod only)"
+            "**n/say <message>** - Make the bot repeat your message\n"
+            "**n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
+            "**n/announce <message>** - Announce a message\n"
+            "**n/hug @user** - Hug a member\n"
+            "**n/hugall** - Hug everyone\n"
+            "**n/kiss @user** - Kiss a member\n"
+            "**n/flipcoin** - Flip a coin\n"
+            "**n/roll [sides]** or **n/roll XdY** - Roll dice\n"
+            "**n/8ball <question>** - Ask the magic 8ball\n"
+            "**n/meme** - Get a random meme\n"
+            "**n/rps <rock/paper/scissors>** - Play Rock, Paper, Scissors\n"
+            "**n/tictactoe @opponent** - Play Tic Tac Toe against a friend\n"
+            "**n/tttmove <1-9>** - Choose a position on the board\n"
+            "**n/connect4 @opponent** - Play Connect 4 against a friend\n"
+            "**n/c4move <1-7>** - Choose a column (1–7)\n"
+            "**n/rpg** - Interactive text RPG (type choices directly, no prefix needed)\n"
+            "**n/spellduel @opponent** - Engage in a spell duel (type actions directly)\n"
+            "**n/rapbattle @opponent** - Rap battle your opponent (type comebacks directly)\n"
+            "**n/wordchain** - Start a word chain game\n"
+            "**n/endwordchain** - End the word chain (admin/mod only)\n"
+            "**n/ask <question>** - Ask OpenAI a question"
         ), inline=False)
 
         embed.add_field(name="**✚ Other**", value="⚪️ **n/help** - Show this message", inline=False)
@@ -1163,6 +1164,47 @@ async def endwordchain(ctx):
 
     del active_wordchain[channel.id]
     await ctx.send("🛑 **[The word chain has been ended by a moderator]**")
+
+@bot.command(name="ask")
+async def ask_command(ctx, *, question: str):
+    """Ask ChatGPT a question without needing an API key, splitting long answers into readable chunks."""
+    try:
+        thinking_msg = await ctx.send("🤖 **[Thinking...]**")
+
+        async with aiohttp.ClientSession() as session:
+            # Free ChatGPT API proxy endpoint
+            async with session.post(
+                "https://api.openai-proxy.com/v1/chat/completions",
+                json={
+                    "model": "gpt-3.5-turbo",
+                    "messages": [{"role": "user", "content": question}],
+                    "max_tokens": 2000
+                },
+            ) as resp:
+                if resp.status != 200:
+                    await thinking_msg.edit(
+                        content=f"⚠️ **[Something went wrong]** API returned {resp.status}"
+                    )
+                    return
+
+                data = await resp.json()
+                answer = data["choices"][0]["message"]["content"]
+
+        # Split answer into chunks
+        chunk_size = 1900  # keep room for header and formatting
+        answer_chunks = [answer[i:i+chunk_size] for i in range(0, len(answer), chunk_size)]
+
+        # Delete "Thinking..." message
+        await thinking_msg.delete()
+
+        # Send each chunk with mini Q/A header
+        for i, chunk in enumerate(answer_chunks, 1):
+            header = f"🟢 **[OpenAI Answer (Part {i}/{len(answer_chunks)})]**\n"
+            content = f"{header}Q: {question}\nA: {chunk}"
+            await ctx.send(content)
+
+    except Exception as e:
+        await ctx.send(f"⚠️ **[Something went wrong]** {e}")
 
 # ------------------- Poll & Announce -----------------------
 DURATION_TOKEN_RE = re.compile(r"^(\d+)([wdhm])$")
