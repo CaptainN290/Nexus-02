@@ -1351,12 +1351,28 @@ async def servers(ctx):
     except discord.Forbidden:
         await ctx.send("⚠️ **[I couldn't DM you — please enable DMs from server members]**")
 
+import discord
+from discord.ext import commands
+import aiohttp
+import asyncio
+import platform
+import psutil
+import sys
+import time
+import traceback
+
+OWNER_ID = 1210700638904656027  # 👑 Your Discord user ID
+
 @bot.command(name="test")
 async def test_command(ctx):
-    """Run a full diagnostic check for the Nexus bot."""
+    """Run the ultimate full diagnostic check for the Nexus bot, including all commands."""
+    
+    if ctx.author.id != OWNER_ID:
+        return await ctx.send("**❌ [You do not have permission to use this command]**")
+
     embed = discord.Embed(
-        title="🧪 **Nexus System Diagnostic**",
-        description="Running complete diagnostic scan...",
+        title="🧪 **Nexus Ultimate System Diagnostic**",
+        description="Running full comprehensive diagnostic scan...",
         color=discord.Color.orange()
     )
     await ctx.send(embed=embed)
@@ -1366,7 +1382,7 @@ async def test_command(ctx):
     failed = 0
     warnings = 0
 
-    # --- Discord connection ---
+    # ------------------- DISCORD CONNECTION -------------------
     try:
         latency = round(bot.latency * 1000)
         results.append(f"✅ **[🧠 Discord Connection Working ({latency}ms latency)]**")
@@ -1375,84 +1391,62 @@ async def test_command(ctx):
         results.append(f"❌ **[🧠 Discord Connection Failed]** {e}")
         failed += 1
 
-    # --- aiohttp import ---
-    try:
-        import aiohttp
-        results.append("✅ **[📦 aiohttp Module Imported Successfully]**")
-        passed += 1
-    except ImportError as e:
-        results.append(f"❌ **[📦 aiohttp Module Import Failed]** {e}")
-        failed += 1
+    # ------------------- MODULE IMPORTS -------------------
+    modules_to_check = ["aiohttp", "psutil", "discord", "asyncio"]
+    for mod in modules_to_check:
+        try:
+            __import__(mod)
+            results.append(f"✅ **[📦 {mod} Module Imported Successfully]**")
+            passed += 1
+        except ImportError as e:
+            results.append(f"❌ **[📦 {mod} Module Import Failed]** {e}")
+            failed += 1
 
-    # --- Flask uptime server ---
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get("http://127.0.0.1:5000", timeout=5) as resp:
-                if resp.status == 200:
-                    results.append("✅ **[🌐 Flask Uptime Server Running Locally]**")
-                    passed += 1
-                else:
-                    results.append(f"⚠️ **[🌐 Flask Server Responded with {resp.status}]**")
-                    warnings += 1
-    except Exception as e:
-        results.append(f"❌ **[🌐 Flask Server Not Responding]** {e}")
-        failed += 1
+    # ------------------- NETWORK CHECKS -------------------
+    async def check_url(name, url, method="GET", json_data=None, timeout=5):
+        nonlocal passed, failed, warnings
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.request(method, url, json=json_data, timeout=timeout) as resp:
+                    if 200 <= resp.status < 300:
+                        results.append(f"✅ **[{name} Working (Status {resp.status})]**")
+                        passed += 1
+                        return True
+                    else:
+                        results.append(f"⚠️ **[{name} Responded with {resp.status}]**")
+                        warnings += 1
+                        return False
+        except Exception as e:
+            results.append(f"❌ **[{name} Failed]** {e}")
+            failed += 1
+            return False
 
-    # --- Outbound HTTP ---
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://api.ipify.org?format=json", timeout=5) as resp:
-                if resp.status == 200:
-                    ip = (await resp.json()).get("ip", "Unknown")
-                    results.append(f"✅ **[🌍 Outbound HTTP Working (IP: {ip})]**")
-                    passed += 1
-                else:
-                    results.append(f"⚠️ **[🌍 Outbound HTTP Responded with {resp.status}]**")
-                    warnings += 1
-    except Exception as e:
-        results.append(f"❌ **[🌍 Outbound HTTP Failed]** {e}")
-        failed += 1
+    # Flask local server
+    await check_url("🌐 Flask Uptime Server", "http://127.0.0.1:5000")
 
-    # --- Ask Proxy API ---
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                "https://api.openai-proxy.com/v1/chat/completions",
-                json={
-                    "model": "gpt-3.5-turbo",
-                    "messages": [{"role": "user", "content": "Hello"}],
-                    "max_tokens": 5
-                },
-                timeout=8
-            ) as resp:
-                if resp.status == 200:
-                    results.append("✅ **[🤖 Ask Command Proxy Responding Successfully]**")
-                    passed += 1
-                elif resp.status == 401:
-                    results.append("⚠️ **[🤖 Ask Proxy Responded with 401 Unauthorized]** – likely proxy limit or expired key.")
-                    warnings += 1
-                else:
-                    results.append(f"⚠️ **[🤖 Ask Proxy Responded with {resp.status}]**")
-                    warnings += 1
-    except Exception as e:
-        results.append(f"❌ **[🤖 Ask Proxy Failed]** {e}")
-        failed += 1
+    # Outbound HTTP
+    ip_success = await check_url("🌍 Outbound HTTP", "https://api.ipify.org?format=json")
 
-    # --- Word validation API ---
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://api.dictionaryapi.dev/api/v2/entries/en/test", timeout=5) as resp:
-                if resp.status == 200:
-                    results.append("✅ **[📘 Dictionary API (Wordchain) Working]**")
-                    passed += 1
-                else:
-                    results.append(f"⚠️ **[📘 Dictionary API Responded with {resp.status}]**")
-                    warnings += 1
-    except Exception as e:
-        results.append(f"❌ **[📘 Dictionary API Not Reachable]** {e}")
-        failed += 1
+    # Ask Proxy API
+    ask_success = await check_url(
+        "🤖 Ask Command Proxy",
+        "https://api.openai-proxy.com/v1/chat/completions",
+        method="POST",
+        json_data={
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": "Hello"}],
+            "max_tokens": 5
+        },
+        timeout=8
+    )
 
-    # --- Permissions check ---
+    # Dictionary API (Wordchain)
+    wordchain_success = await check_url(
+        "📘 Dictionary API (Wordchain)", 
+        "https://api.dictionaryapi.dev/api/v2/entries/en/test"
+    )
+
+    # ------------------- PERMISSIONS CHECK -------------------
     try:
         perms = ctx.channel.permissions_for(ctx.guild.me)
         if perms.send_messages and perms.embed_links:
@@ -1465,7 +1459,73 @@ async def test_command(ctx):
         results.append(f"❌ **[🔐 Permissions Check Failed]** {e}")
         failed += 1
 
-    # --- Summary footer ---
+    # ------------------- BOT INFO -------------------
+    try:
+        python_ver = platform.python_version()
+        discord_ver = discord.__version__
+        server_count = len(bot.guilds)
+        user_count = len(set(bot.get_all_members()))
+        mem = psutil.Process().memory_info().rss / 1024 / 1024
+        results.append(f"ℹ️ **[Python Version: {python_ver}]**")
+        results.append(f"ℹ️ **[discord.py Version: {discord_ver}]**")
+        results.append(f"ℹ️ **[Connected Servers: {server_count}]**")
+        results.append(f"ℹ️ **[Unique Users Cached: {user_count}]**")
+        results.append(f"ℹ️ **[Bot Memory Usage: {mem:.2f} MB]**")
+        passed += 1
+    except Exception as e:
+        results.append(f"⚠️ **[Bot Info Retrieval Failed]** {e}")
+        warnings += 1
+
+    # ------------------- DYNAMIC COMMAND CHECKS -------------------
+    for command in bot.commands:
+        try:
+            if command.hidden:
+                continue  # Skip hidden commands
+            cmd_name = command.name
+            results.append(f"✅ **[⚡ Command '{cmd_name}' Loaded Successfully]**")
+            passed += 1
+
+            # Try minimal invocations for interactive commands
+            try:
+                if cmd_name == "ping":
+                    start = time.time()
+                    await ctx.invoke(command)
+                    elapsed = round((time.time() - start) * 1000)
+                    results.append(f"✅ **[⚡ 'ping' Response OK ({elapsed}ms)]**")
+
+                elif cmd_name == "ask" and ask_success:
+                    await ctx.invoke(command, question="2+2")
+                    results.append(f"✅ **[⚡ 'ask' Test Invoked Successfully]**")
+
+                elif cmd_name == "wordchain" and wordchain_success:
+                    await ctx.invoke(command, word="test")
+                    results.append(f"✅ **[⚡ 'wordchain' Test Invoked Successfully]**")
+
+                elif cmd_name in ["say", "meme", "rps", "tictactoe", "connect4"]:
+                    # Minimal test: invoke with safe parameters
+                    if cmd_name == "say":
+                        await ctx.invoke(command, message="Test")
+                    elif cmd_name == "meme":
+                        await ctx.invoke(command)
+                    elif cmd_name == "rps":
+                        await ctx.invoke(command, choice="rock")
+                    elif cmd_name == "tictactoe":
+                        # pass self to skip opponent interaction
+                        await ctx.invoke(command, opponent=ctx.author)
+                    elif cmd_name == "connect4":
+                        await ctx.invoke(command, opponent=ctx.author)
+                    results.append(f"✅ **[⚡ '{cmd_name}' Interactive Test Invoked Successfully]**")
+            except Exception as e:
+                tb = traceback.format_exc(limit=2)
+                results.append(f"❌ **[⚡ Command '{cmd_name}' Test Failed]** {e}\n```py\n{tb}```")
+                failed += 1
+
+        except Exception as e:
+            tb = traceback.format_exc(limit=2)
+            results.append(f"❌ **[⚡ Command '{cmd_name}' Failed to Load]** {e}\n```py\n{tb}```")
+            failed += 1
+
+    # ------------------- FINAL SUMMARY -------------------
     total = passed + failed + warnings
     if failed == 0 and warnings == 0:
         summary = f"✅ All {passed}/{total} checks passed. System fully operational."
