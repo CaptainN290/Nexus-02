@@ -1038,6 +1038,11 @@ async def end_rapbattle(ctx):
 
     await ctx.send(f"🏆 **[The rap battle winner is: **{winner}**!\n{winner_text} ]**")
 
+import discord            # For embeds and message handling
+from discord.ext import commands  # To register the command
+import asyncio            # For timeouts / async waits
+import re                 # For word validation (checking last/first letters, etc.)
+
 # Track active games per channel
 active_wordchain = {}
 
@@ -1162,6 +1167,11 @@ async def endwordchain(ctx):
 
     del active_wordchain[channel.id]
     await ctx.send("🛑 **[The word chain has been ended by a moderator]**")
+
+import aiohttp            # For making async HTTP requests to the OpenAI proxy
+import discord            # For Discord embed/message formatting
+from discord.ext import commands  # For creating the command itself
+import asyncio            # For async operations (e.g. sending messages, delays)
 
 @bot.command(name="ask")
 async def ask_command(ctx, *, question: str):
