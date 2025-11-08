@@ -4,18 +4,18 @@ import types
 sys.modules['audioop'] = types.ModuleType('audioop')
 # ========================================
 
-# main.py
-import os
+# main.pyimport os
+import re
+import random
+import asyncio
 import threading
+from datetime import datetime, timedelta
+from typing import Optional
+
+import aiohttp
 from flask import Flask
 import discord
 from discord.ext import commands
-from datetime import timedelta, datetime
-from typing import Optional
-import random
-import asyncio
-import re
-import aiohttp
 
 # ------------------- Flask Setup for Uptime -------------------
 app = Flask(__name__)
@@ -61,65 +61,65 @@ async def help_command(ctx):
         )
 
         embed.add_field(name="**⛊ Moderation**", value=(
-            "**n/kick @user <reason>** - Kick a member (requires permissions)\n"
-            "**n/ban @user <reason>** - Ban a member (requires permissions)\n"
-            "**n/unban <user_id>** - Unban a user\n"
-            "**n/timeout @user <minutes> [reason]** - Timeout a member\n"
-            "**n/removetimeout @user** - Remove a timeout from a member\n"
-            "**n/mute @user [reason]** - Mute a member\n"
-            "**n/unmute @user** - Unmute a member\n"
-            "**n/warn @user [reason]** - Warn a member\n"
-            "**n/snipe [0-5] [#channel]** - Retrieve recently deleted messages\n"
-            "**n/clear <amount> [images/users]** - Delete a certain amount of messages"
+            "🔴 **n/kick @user <reason>** - Kick a member (requires permissions)\n"
+            "🔴 **n/ban @user <reason>** - Ban a member (requires permissions)\n"
+            "🔴 **n/unban <user_id>** - Unban a user\n"
+            "🔴 **n/timeout @user <minutes> [reason]** - Timeout a member\n"
+            "🔴 **n/removetimeout @user** - Remove a timeout from a member\n"
+            "🔴 **n/mute @user [reason]** - Mute a member\n"
+            "🔴 **n/unmute @user** - Unmute a member\n"
+            "🔴 **n/warn @user [reason]** - Warn a member\n"
+            "🔴 **n/snipe [0-5] [#channel]** - Retrieve recently deleted messages\n"
+            "🔴 **n/clear <amount> [images/users]** - Delete a certain amount of messages"
         ), inline=False)
 
         embed.add_field(name="**⚙︎ Channel**", value=(
-            "**n/slowmode <seconds>** - Set a slowmode delay in the channel\n"
-            "**n/lock** - Lock the current channel\n"
-            "**n/unlock** - Unlock the current channel"
+            "🔘 **n/slowmode <seconds>** - Set a slowmode delay in the channel\n"
+            "🔘 **n/lock** - Lock the current channel\n"
+            "🔘 **n/unlock** - Unlock the current channel"
         ), inline=False)
 
         embed.add_field(name="**𐀪 Roles**", value=(
-            "**n/addrole @user @role** - Give a member a specific role\n"
-            "**n/removerole @user @role** - Remove a role from a member\n"
-            "**n/rolecatalog** - View all roles (limit: 20)"
+            "🟣 **n/addrole @user @role** - Give a member a specific role\n"
+            "🟣 **n/removerole @user @role** - Remove a role from a member\n"
+            "🟣 **n/rolecatalog** - View all roles (limit: 20)"
         ), inline=False)
 
         embed.add_field(name="**𝒊 Info**", value=(
-            "**n/userinfo @user** - View info about a user\n"
-            "**n/serverinfo** - View server info\n"
-            "**n/serverbanner** - Display the server banner\n"
-            "**n/avatar @user** - View a member's avatar\n"
-            "**n/ping** - Show bot latency\n"
-            "**n/time** - Display current UTC time\n"
-            "**n/status** - Show bot and web service status\n"
-            "**n/invite** - Get the bot's invite link"
+            "🔵 **n/userinfo @user** - View info about a user\n"
+            "🔵 **n/serverinfo** - View server info\n"
+            "🔵 **n/serverbanner** - Display the server banner\n"
+            "🔵 **n/avatar @user** - View a member's avatar\n"
+            "🔵 **n/ping** - Show bot latency\n"
+            "🔵 **n/time** - Display current UTC time\n"
+            "🔵 **n/status** - Show bot and web service status\n"
+            "🔵 **n/invite** - Get the bot's invite link"
         ), inline=False)
 
         embed.add_field(name="**☻ Fun & Utility**", value=(
-            "**n/say <message>** - Make the bot repeat your message\n"
-            "**n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
-            "**n/announce <message>** - Announce a message\n"
-            "**n/hug @user** - Hug a member\n"
-            "**n/hugall** - Hug everyone\n"
-            "**n/kiss @user** - Kiss a member\n"
-            "**n/flipcoin** - Flip a coin\n"
-            "**n/roll [sides]** or **n/roll XdY** - Roll dice\n"
-            "**n/8ball <question>** - Ask the magic 8ball\n"
-            "**n/meme** - Get a random meme\n"
-            "**n/rps <rock/paper/scissors>** - Play Rock, Paper, Scissors\n"
-            "**n/tictactoe @opponent** - Play Tic Tac Toe against a friend\n"
-            "**n/tttmove <1-9>** - Choose a position on the board\n"
-            "**n/connect4 @opponent** - Play Connect 4 against a friend\n"
-            "**n/c4move <1-7>** - Choose a column (1–7)\n"
-            "**n/rpg** - Interactive text RPG (type choices directly, no prefix needed)\n"
-            "**n/spellduel @opponent** - Engage in a spell duel (type actions directly)\n"
-            "**n/rapbattle @opponent** - Rap battle your opponent (type comebacks directly)\n"
-            "**n/wordchain** - Start a word chain game\n"
-            "**n/endwordchain** - End the word chain (admin/mod only)"
+            "🟡 **n/say <message>** - Make the bot repeat your message\n"
+            "🟡 **n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
+            "🟡 **n/announce <message>** - Announce a message\n"
+            "🟡 **n/hug @user** - Hug a member\n"
+            "🟡 **n/hugall** - Hug everyone\n"
+            "🟡 **n/kiss @user** - Kiss a member\n"
+            "🟡 **n/flipcoin** - Flip a coin\n"
+            "🟡 **n/roll [sides]** or **n/roll XdY** - Roll dice\n"
+            "🟡 **n/8ball <question>** - Ask the magic 8ball\n"
+            "🟡 **n/meme** - Get a random meme\n"
+            "🟡 **n/rps <rock/paper/scissors>** - Play Rock, Paper, Scissors\n"
+            "🟡 **n/tictactoe @opponent** - Play Tic Tac Toe against a friend\n"
+            "🟡 **n/tttmove <1-9>** - Choose a position on the board\n"
+            "🟡 **n/connect4 @opponent** - Play Connect 4 against a friend\n"
+            "🟡 **n/c4move <1-7>** - Choose a column (1–7)\n"
+            "🟡 **n/rpg** - Interactive text RPG (type choices directly, no prefix needed)\n"
+            "🟡 **n/spellduel @opponent** - Engage in a spell duel (type actions directly)\n"
+            "🟡 **n/rapbattle @opponent** - Rap battle your opponent (type comebacks directly)\n"
+            "🟡 **n/wordchain** - Start a word chain game\n"
+            "🟡 **n/endwordchain** - End the word chain (admin/mod only)"
         ), inline=False)
 
-        embed.add_field(name="**✚ Other**", value="**n/help** - Show this message", inline=False)
+        embed.add_field(name="**✚ Other**", value="⚪️ **n/help** - Show this message", inline=False)
 
         embed.set_footer(
             text=f"Made by @captainn29 • Requested by {ctx.author}",
@@ -130,7 +130,7 @@ async def help_command(ctx):
 
     except discord.Forbidden:
         await ctx.send(
-            "**⚠️ I don’t have permission to send embeds here!**\n"
+            "**⚠️ [I don’t have permission to send embeds here!]**\n"
             "Please enable the `Embed Links` permission or check channel settings."
         )
 
@@ -926,10 +926,6 @@ async def spellduel(ctx, member: discord.Member):
     active_spell_duels.pop(ctx.author.id, None)
     active_spell_duels.pop(member.id, None)
 
-import asyncio
-import discord
-from discord.ext import commands
-
 active_rapbattles = {}  # Track active rap battles per channel
 
 @bot.command()
@@ -1040,11 +1036,6 @@ async def end_rapbattle(ctx):
         winner = "Tie!"
 
     await ctx.send(f"🏆 **[The rap battle winner is: **{winner}**!\n{winner_text} ]**")
-
-import aiohttp
-import asyncio
-from discord.ext import commands
-import discord
 
 # Track active games per channel
 active_wordchain = {}
