@@ -4,7 +4,8 @@ import types
 sys.modules['audioop'] = types.ModuleType('audioop')
 # ========================================
 
-# main.pyimport os
+# ---- Standard library imports ----
+import os
 import re
 import random
 import asyncio
@@ -12,6 +13,7 @@ import threading
 from datetime import datetime, timedelta
 from typing import Optional
 
+# ---- Third-party imports ----
 import aiohttp
 from flask import Flask
 import discord
