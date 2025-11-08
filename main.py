@@ -618,7 +618,7 @@ async def rps(ctx, choice: str):
     else:
         result = "You lose!"
 
-    await ctx.send(f"🤖 **[I chose **{bot_choice}**.\n🎉 {result} ]**")
+    await ctx.send(f"🤖 **[I chose **{bot_choice}**]**\n🎉 {result}")
 
 active_ttt = {}
 
@@ -1041,6 +1041,11 @@ async def end_rapbattle(ctx):
 
     await ctx.send(f"🏆 **[The rap battle winner is: **{winner}**!\n{winner_text} ]**")
 
+import aiohttp
+import asyncio
+from discord.ext import commands
+import discord
+
 # Track active games per channel
 active_wordchain = {}
 
@@ -1087,7 +1092,7 @@ async def wordchain(ctx, starting_word: str):
     }
 
     await ctx.send(
-        f"🔤 **Word Chain Started!**\n"
+        f"🔤 **[Word Chain Started!]**\n"
         f"Starting word: **{starting_word}**\n"
         f"Next word must start with **{starting_word[-1].upper()}**!"
     )
