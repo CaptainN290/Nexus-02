@@ -122,8 +122,6 @@ async def help_command(ctx):
             "**n/ask <question>** - Ask OpenAI a question"
         ), inline=False)
 
-        embed.add_field(name="**✚ Other**", value="⚪️ **n/help** - Show this message", inline=False)
-
         embed.set_footer(
             text=f"Made by @captainn29 • Requested by {ctx.author}",
             icon_url=ctx.author.display_avatar.url
@@ -1167,7 +1165,9 @@ async def endwordchain(ctx):
 
 @bot.command(name="ask")
 async def ask_command(ctx, *, question: str):
-    """Ask ChatGPT a question without needing an API key, splitting long answers into readable chunks."""
+    """Ask ChatGPT a question without needing an API key, splitting long answers neatly."""
+    import re
+
     try:
         thinking_msg = await ctx.send("🤖 **[Thinking...]**")
 
@@ -1190,17 +1190,31 @@ async def ask_command(ctx, *, question: str):
                 data = await resp.json()
                 answer = data["choices"][0]["message"]["content"]
 
-        # Split answer into chunks
-        chunk_size = 1900  # keep room for header and formatting
-        answer_chunks = [answer[i:i+chunk_size] for i in range(0, len(answer), chunk_size)]
+        # Split answer into readable chunks at sentence boundaries
+        sentences = re.split(r'(?<=[.!?]) +', answer)
+        chunks = []
+        current_chunk = ""
+
+        for sentence in sentences:
+            if len(current_chunk) + len(sentence) + 1 > 1900:
+                chunks.append(current_chunk)
+                current_chunk = sentence
+            else:
+                if current_chunk:
+                    current_chunk += " " + sentence
+                else:
+                    current_chunk = sentence
+
+        if current_chunk:
+            chunks.append(current_chunk)
 
         # Delete "Thinking..." message
         await thinking_msg.delete()
 
-        # Send each chunk with mini Q/A header
-        for i, chunk in enumerate(answer_chunks, 1):
-            header = f"🟢 **[OpenAI Answer (Part {i}/{len(answer_chunks)})]**\n"
-            content = f"{header}Q: {question}\nA: {chunk}"
+        # Send each chunk with bold Q/A header
+        for i, chunk in enumerate(chunks, 1):
+            header = f"🟢 **[OpenAI Answer (Part {i}/{len(chunks)})]**\n"
+            content = f"{header}**Q:** {question}\n**A:** {chunk}"
             await ctx.send(content)
 
     except Exception as e:
