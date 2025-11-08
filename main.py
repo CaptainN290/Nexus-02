@@ -45,8 +45,8 @@ def no_perm_msg(action):
 # ------------------- Events -----------------------
 @bot.event
 async def on_ready():
-    print(f"✅ [Logged in as {bot.user}]")
-
+    print(f"✅ Logged in as {bot.user}")
+    print("Commands loaded:", [cmd.name for cmd in bot.commands])
 # ------------------- HELP COMMAND -----------------------
 @bot.command(name="help")
 async def help_command(ctx):
