@@ -48,81 +48,90 @@ async def on_ready():
     print(f"✅ [Logged in as {bot.user}]")
 
 # ------------------- HELP COMMAND -----------------------
-@bot.command()
-async def help(ctx):
-    embed = discord.Embed(
-        title="**➤ 𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 - 𝐂𝐨𝐦𝐦𝐚𝐧𝐝𝐬 𝐋𝐢𝐬𝐭**",
-        description="• List of all working commands",
-        color=discord.Color.blue()
-    )
+@bot.command(name="help")
+async def help_command(ctx):
+    """Shows a full command list organized by category"""
 
-    embed.add_field(name="**⛊ Moderation**", value=(
-        "**n/kick @user <reason>** - Kick a member (requires permissions)\n"
-        "**n/ban @user <reason>** - Ban a member (requires permissions)\n"
-        "**n/unban <user_id>** - Unban a user\n"
-        "**n/timeout @user <minutes> [reason]** - Timeout a member\n"
-        "**n/removetimeout @user** - Remove a timeout from a member\n"
-        "**n/mute @user [reason]** - Mute a member\n"
-        "**n/unmute @user** - Unmute a member\n"
-        "**n/warn @user [reason]** - Warn a member\n"
-        "**n/snipe [0-5] [#channel]** - Retrieve recently deleted messages\n"
-        "**n/clear <amount> [images/users]** - Delete a certain amount of messages"
-    ), inline=False)
+    try:
+        embed = discord.Embed(
+            title="**➤ 𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 - 𝐂𝐨𝐦𝐦𝐚𝐧𝐝𝐬 𝐋𝐢𝐬𝐭**",
+            description="• List of all working commands",
+            color=discord.Color.blue()
+        )
 
-    embed.add_field(name="**⚙︎ Channel**", value=(
-        "**n/slowmode <seconds>** - Set a slowmode delay in the channel\n"
-        "**n/lock** - Lock the current channel\n"
-        "**n/unlock** - Unlock the current channel"
-    ), inline=False)
+        embed.add_field(name="**⛊ Moderation**", value=(
+            "**n/kick @user <reason>** - Kick a member (requires permissions)\n"
+            "**n/ban @user <reason>** - Ban a member (requires permissions)\n"
+            "**n/unban <user_id>** - Unban a user\n"
+            "**n/timeout @user <minutes> [reason]** - Timeout a member\n"
+            "**n/removetimeout @user** - Remove a timeout from a member\n"
+            "**n/mute @user [reason]** - Mute a member\n"
+            "**n/unmute @user** - Unmute a member\n"
+            "**n/warn @user [reason]** - Warn a member\n"
+            "**n/snipe [0-5] [#channel]** - Retrieve recently deleted messages\n"
+            "**n/clear <amount> [images/users]** - Delete a certain amount of messages"
+        ), inline=False)
 
-    embed.add_field(name="**𐀪 Roles**", value=(
-        "**n/addrole @user @role** - Give a member a specific role\n"
-        "**n/removerole @user @role** - Remove a role from a member\n"
-        "**n/rolecatalog** - View all roles (limit: 20)"
-    ), inline=False)
+        embed.add_field(name="**⚙︎ Channel**", value=(
+            "**n/slowmode <seconds>** - Set a slowmode delay in the channel\n"
+            "**n/lock** - Lock the current channel\n"
+            "**n/unlock** - Unlock the current channel"
+        ), inline=False)
 
-    embed.add_field(name="**𝒊 Info**", value=(
-        "**n/userinfo @user** - View info about a user\n"
-        "**n/serverinfo** - View server info\n"
-        "**n/serverbanner** - Display the server banner\n"
-        "**n/avatar @user** - View a member's avatar\n"
-        "**n/ping** - Show bot latency\n"
-        "**n/time** - Display current UTC time\n"
-        "**n/status** - Show bot and web service status\n"
-        "**n/invite** - Get the bot's invite link"
-    ), inline=False)
+        embed.add_field(name="**𐀪 Roles**", value=(
+            "**n/addrole @user @role** - Give a member a specific role\n"
+            "**n/removerole @user @role** - Remove a role from a member\n"
+            "**n/rolecatalog** - View all roles (limit: 20)"
+        ), inline=False)
 
-    embed.add_field(name="**☻ Fun & Utility**", value=(
-        "**n/say <message>** - Make the bot repeat your message\n"
-        "**n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
-        "**n/announce <message>** - Announce a message\n"
-        "**n/hug @user** - Hug a member\n"
-        "**n/hugall** - Hug everyone\n"
-        "**n/kiss @user** - Kiss a member\n"
-        "**n/flipcoin** - Flip a coin\n"
-        "**n/roll [sides]** or **n/roll XdY** - Roll dice\n"
-        "**n/8ball <question>** - Ask the magic 8ball\n"
-        "**n/meme** - Get a random meme\n"
-        "**n/rps <rock/paper/scissors>** - Play Rock, Paper, Scissors\n"
-        "**n/tictactoe @opponent** - Play Tic Tac Toe against a friend\n"
-        "**n/tttmove <1-9>** - Choose a position on the board\n"
-        "**n/connect4 @opponent** - Play Connect 4 against a friend\n"
-        "**n/c4move <1-7>** - Choose a column (1–7)\n"
-        "**n/rpg** - Interactive text RPG (type choices directly, no prefix needed)\n"
-        "**n/spellduel @opponent** - Engage in a spell duel (type actions directly)\n"
-        "**n/rapbattle @opponent** - Rap battle your opponent (type comebacks directly)\n"
-        "**n/wordchain** - Start a word chain game\n"
-        "**n/endwordchain** - End the word chain (admin/mod only)"
-    ), inline=False)
+        embed.add_field(name="**𝒊 Info**", value=(
+            "**n/userinfo @user** - View info about a user\n"
+            "**n/serverinfo** - View server info\n"
+            "**n/serverbanner** - Display the server banner\n"
+            "**n/avatar @user** - View a member's avatar\n"
+            "**n/ping** - Show bot latency\n"
+            "**n/time** - Display current UTC time\n"
+            "**n/status** - Show bot and web service status\n"
+            "**n/invite** - Get the bot's invite link"
+        ), inline=False)
 
-    embed.add_field(name="**✚ Other**", value="**n/help** - Show this message", inline=False)
+        embed.add_field(name="**☻ Fun & Utility**", value=(
+            "**n/say <message>** - Make the bot repeat your message\n"
+            "**n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
+            "**n/announce <message>** - Announce a message\n"
+            "**n/hug @user** - Hug a member\n"
+            "**n/hugall** - Hug everyone\n"
+            "**n/kiss @user** - Kiss a member\n"
+            "**n/flipcoin** - Flip a coin\n"
+            "**n/roll [sides]** or **n/roll XdY** - Roll dice\n"
+            "**n/8ball <question>** - Ask the magic 8ball\n"
+            "**n/meme** - Get a random meme\n"
+            "**n/rps <rock/paper/scissors>** - Play Rock, Paper, Scissors\n"
+            "**n/tictactoe @opponent** - Play Tic Tac Toe against a friend\n"
+            "**n/tttmove <1-9>** - Choose a position on the board\n"
+            "**n/connect4 @opponent** - Play Connect 4 against a friend\n"
+            "**n/c4move <1-7>** - Choose a column (1–7)\n"
+            "**n/rpg** - Interactive text RPG (type choices directly, no prefix needed)\n"
+            "**n/spellduel @opponent** - Engage in a spell duel (type actions directly)\n"
+            "**n/rapbattle @opponent** - Rap battle your opponent (type comebacks directly)\n"
+            "**n/wordchain** - Start a word chain game\n"
+            "**n/endwordchain** - End the word chain (admin/mod only)"
+        ), inline=False)
 
-    embed.set_footer(
-        text=f"Made by @captainn29 • Requested by {ctx.author}",
-        icon_url=ctx.author.display_avatar.url
-    )
+        embed.add_field(name="**✚ Other**", value="**n/help** - Show this message", inline=False)
 
-    await ctx.send(embed=embed)
+        embed.set_footer(
+            text=f"Made by @captainn29 • Requested by {ctx.author}",
+            icon_url=ctx.author.display_avatar.url
+        )
+
+        await ctx.send(embed=embed)
+
+    except discord.Forbidden:
+        await ctx.send(
+            "**⚠️ I don’t have permission to send embeds here!**\n"
+            "Please enable the `Embed Links` permission or check channel settings."
+        )
 
 # ------------------- Basic Commands -----------------------
 @bot.command()
