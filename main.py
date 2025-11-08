@@ -35,7 +35,8 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-bot = commands.Bot(command_prefix="n/", intents=intents, help_command=None)
+bot = commands.Bot(command_prefix="n/", intents=intents)
+bot.remove_command("help")  # 👈 This line disables the default help command
 bot_start_time = datetime.utcnow()
 
 # ------------------- Helper -----------------------
