@@ -1341,6 +1341,141 @@ async def servers(ctx):
     except discord.Forbidden:
         await ctx.send("⚠️ **[I couldn't DM you — please enable DMs from server members]**")
 
+@bot.command(name="test")
+async def test_command(ctx):
+    """Run a full diagnostic check for the Nexus bot."""
+    embed = discord.Embed(
+        title="🧪 **Nexus System Diagnostic**",
+        description="Running complete diagnostic scan...",
+        color=discord.Color.orange()
+    )
+    await ctx.send(embed=embed)
+
+    results = []
+    passed = 0
+    failed = 0
+    warnings = 0
+
+    # --- Discord connection ---
+    try:
+        latency = round(bot.latency * 1000)
+        results.append(f"✅ **[🧠 Discord Connection Working ({latency}ms latency)]**")
+        passed += 1
+    except Exception as e:
+        results.append(f"❌ **[🧠 Discord Connection Failed]** {e}")
+        failed += 1
+
+    # --- aiohttp import ---
+    try:
+        import aiohttp
+        results.append("✅ **[📦 aiohttp Module Imported Successfully]**")
+        passed += 1
+    except ImportError as e:
+        results.append(f"❌ **[📦 aiohttp Module Import Failed]** {e}")
+        failed += 1
+
+    # --- Flask uptime server ---
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://127.0.0.1:5000", timeout=5) as resp:
+                if resp.status == 200:
+                    results.append("✅ **[🌐 Flask Uptime Server Running Locally]**")
+                    passed += 1
+                else:
+                    results.append(f"⚠️ **[🌐 Flask Server Responded with {resp.status}]**")
+                    warnings += 1
+    except Exception as e:
+        results.append(f"❌ **[🌐 Flask Server Not Responding]** {e}")
+        failed += 1
+
+    # --- Outbound HTTP ---
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://api.ipify.org?format=json", timeout=5) as resp:
+                if resp.status == 200:
+                    ip = (await resp.json()).get("ip", "Unknown")
+                    results.append(f"✅ **[🌍 Outbound HTTP Working (IP: {ip})]**")
+                    passed += 1
+                else:
+                    results.append(f"⚠️ **[🌍 Outbound HTTP Responded with {resp.status}]**")
+                    warnings += 1
+    except Exception as e:
+        results.append(f"❌ **[🌍 Outbound HTTP Failed]** {e}")
+        failed += 1
+
+    # --- Ask Proxy API ---
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://api.openai-proxy.com/v1/chat/completions",
+                json={
+                    "model": "gpt-3.5-turbo",
+                    "messages": [{"role": "user", "content": "Hello"}],
+                    "max_tokens": 5
+                },
+                timeout=8
+            ) as resp:
+                if resp.status == 200:
+                    results.append("✅ **[🤖 Ask Command Proxy Responding Successfully]**")
+                    passed += 1
+                elif resp.status == 401:
+                    results.append("⚠️ **[🤖 Ask Proxy Responded with 401 Unauthorized]** – likely proxy limit or expired key.")
+                    warnings += 1
+                else:
+                    results.append(f"⚠️ **[🤖 Ask Proxy Responded with {resp.status}]**")
+                    warnings += 1
+    except Exception as e:
+        results.append(f"❌ **[🤖 Ask Proxy Failed]** {e}")
+        failed += 1
+
+    # --- Word validation API ---
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://api.dictionaryapi.dev/api/v2/entries/en/test", timeout=5) as resp:
+                if resp.status == 200:
+                    results.append("✅ **[📘 Dictionary API (Wordchain) Working]**")
+                    passed += 1
+                else:
+                    results.append(f"⚠️ **[📘 Dictionary API Responded with {resp.status}]**")
+                    warnings += 1
+    except Exception as e:
+        results.append(f"❌ **[📘 Dictionary API Not Reachable]** {e}")
+        failed += 1
+
+    # --- Permissions check ---
+    try:
+        perms = ctx.channel.permissions_for(ctx.guild.me)
+        if perms.send_messages and perms.embed_links:
+            results.append("✅ **[🔐 Permissions OK (Embed + Message Send)]**")
+            passed += 1
+        else:
+            results.append("⚠️ **[🔐 Limited Permissions]** Missing `Embed Links` or `Send Messages`.")
+            warnings += 1
+    except Exception as e:
+        results.append(f"❌ **[🔐 Permissions Check Failed]** {e}")
+        failed += 1
+
+    # --- Summary footer ---
+    total = passed + failed + warnings
+    if failed == 0 and warnings == 0:
+        summary = f"✅ All {passed}/{total} checks passed. System fully operational."
+        color = discord.Color.green()
+    elif failed == 0:
+        summary = f"⚠️ {warnings}/{total} checks returned warnings."
+        color = discord.Color.gold()
+    else:
+        summary = f"❌ {failed}/{total} checks failed. Please review issues above."
+        color = discord.Color.red()
+
+    embed = discord.Embed(
+        title="🧪 **Nexus System Diagnostic**",
+        description="\n".join(results),
+        color=color
+    )
+    embed.set_footer(text=summary)
+
+    await ctx.send(embed=embed)
+
 # ------------------- Status Command -----------------------
 @bot.command()
 async def status(ctx):
