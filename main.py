@@ -66,13 +66,13 @@ async def help_command(ctx):
             "**n/kick @user <reason>** - Kick a member (requires permissions)\n"
             "**n/ban @user <reason>** - Ban a member (requires permissions)\n"
             "**n/unban <user_id>** - Unban a user\n"
-            "**n/timeout @user <minutes> [reason]** - Timeout a member\n"
+            "**n/timeout @user <minutes> <reason>** - Timeout a member\n"
             "**n/removetimeout @user** - Remove a timeout from a member\n"
-            "**n/mute @user [reason]** - Mute a member\n"
+            "**n/mute @user <reason>** - Mute a member\n"
             "**n/unmute @user** - Unmute a member\n"
-            "**n/warn @user [reason]** - Warn a member\n"
+            "**n/warn @user <reason>** - Warn a member\n"
             "**n/snipe [0-5] [#channel]** - Retrieve recently deleted messages\n"
-            "**n/clear <amount> [images/users]** - Delete a certain amount of messages"
+            "**n/clear <amount> [ex:] [images/@user]** - Delete a certain amount of messages"
         ), inline=False)
 
         embed.add_field(name="**⚙︎ Channel**", value=(
@@ -106,7 +106,7 @@ async def help_command(ctx):
     "**n/hugall** - Hug everyone\n"
     "**n/kiss @user** - Kiss someone\n"
     "**n/flipcoin** - Flip a coin\n"
-    "**n/roll <sides>** or **n/roll XdY** - Roll dice\n"
+    "**n/roll <sides>** or **n/roll 0d0** - Roll dice\n"
     "**n/8ball <question>** - Magic 8ball\n"
     "**n/meme** - Get a meme\n"
     "**n/rps <rock/paper/scissors>** - Play RPS\n"
@@ -1073,7 +1073,7 @@ async def wordchain(ctx, starting_word: str):
 
     # Validate starting word
     if not await is_valid_english_word(starting_word):
-        await ctx.send(f"❌ '{starting_word}' is not a valid English word.")
+        await ctx.send(f"❌ **['{starting_word}' is not a valid English word]**")
         return
 
     active_wordchain[channel.id] = {
