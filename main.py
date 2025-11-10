@@ -73,6 +73,8 @@ async def help_command(ctx):
             "**n/warn @user <reason>** - Warn a member\n"
             "**n/snipe [0-5] [#channel]** - Retrieve recently deleted messages\n"
             "**n/clear <amount> [ex:] [images/@user]** - Delete a certain amount of messages"
+            "**n/setupapp <question> | <question>** - Set questions for applications\n" 
+            "**n/openapp [@user]** - Apply for a role or membership\n"
         ), inline=False)
 
         embed.add_field(name="**⚙︎ Channel**", value=(
@@ -362,6 +364,83 @@ async def clear(ctx, amount: int, *args):
             pass
     except Exception as e:
         await ctx.send(f"**❌ [Error: {e}]**")
+
+# ------------------- Application Commands -----------------------
+
+app_questions = {}
+
+class CloseAppButton(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(
+            discord.ui.Button(label="Close Application", style=discord.ButtonStyle.red, custom_id="close_app")
+        )
+
+    @discord.ui.button(label="Close Application", style=discord.ButtonStyle.red, custom_id="close_button")
+    async def close_app(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(
+            "**✅ [Application marked as complete — staff will review soon!]**", ephemeral=True
+        )
+        await interaction.channel.send(f"**📩 [{interaction.user} has completed their application.]**")
+
+@bot.command(name="setupapp")
+async def setup_app(ctx, *, questions: str = None):
+    if not ctx.author.guild_permissions.manage_guild:
+        return await ctx.send(no_perm_msg("set up applications"))
+
+    if not questions:
+        return await ctx.send(
+            "**❌ [Please provide questions separated by `|`.]**\n"
+            "Example: `n/setupapp What is your name? | Why do you want to join? | How active are you?`"
+        )
+
+    question_list = [q.strip() for q in questions.split("|") if q.strip()]
+    app_questions[ctx.guild.id] = question_list
+
+    await ctx.send(f"**✅ [Application setup complete — {len(question_list)} questions loaded.]**")
+
+@bot.command(name="openapp")
+async def open_app(ctx, member: discord.Member = None):
+    if not member:
+        member = ctx.author
+
+    if ctx.guild.id not in app_questions:
+        return await ctx.send("**❌ [No application questions set! Use `n/setupapp` first.]**")
+
+    # Only admins or mods can open applications for others
+    if member != ctx.author and not ctx.author.guild_permissions.manage_guild:
+        return await ctx.send(no_perm_msg("open applications for others"))
+
+    questions = app_questions[ctx.guild.id]
+
+    overwrites = {
+        ctx.guild.default_role: discord.PermissionOverwrite(view_channel=False),
+        member: discord.PermissionOverwrite(view_channel=True, send_messages=True),
+        ctx.guild.me: discord.PermissionOverwrite(view_channel=True, send_messages=True),
+    }
+
+    channel_name = f"application-{member.name}".replace(" ", "-")
+    existing_channel = discord.utils.get(ctx.guild.text_channels, name=channel_name)
+    if existing_channel:
+        return await ctx.send(f"**⚠️ [An application channel already exists: {existing_channel.mention}]**")
+
+    channel = await ctx.guild.create_text_channel(channel_name, overwrites=overwrites, reason="New application")
+
+    embed = discord.Embed(
+        title="📋 Application Form",
+        description="\n".join([f"**Q{i+1}.** {q}" for i, q in enumerate(questions)]),
+        color=discord.Color.blurple()
+    )
+    embed.set_footer(text="Please answer each question below. Press 'Close Application' when finished.")
+
+    view = CloseAppButton()
+    await channel.send(
+        content=f"{member.mention}, please answer each question below to complete your application.",
+        embed=embed,
+        view=view
+    )
+
+    await ctx.send(f"**✅ [Application channel created: {channel.mention}]**")
 
 # ------------------- Channel Commands -----------------------
 @bot.command()
@@ -1038,35 +1117,18 @@ async def end_rapbattle(ctx):
 
     await ctx.send(f"🏆 **[The rap battle winner is: **{winner}**!\n{winner_text} ]**")
 
-import discord            # For embeds and message handling
-from discord.ext import commands  # To register the command
-import asyncio            # For timeouts / async waits
-import re                 # For word validation (checking last/first letters, etc.)
+import discord
+from discord.ext import commands
+import asyncio
+import re
+import aiohttp
 
-# Track active games per channel
+# ------------------- Active Games Tracking -------------------
+# Stores active word chain games per channel
+# Structure: {channel_id: {"current_word": str, "last_user": int, "chain_length": int, "first_message_done": bool, "session": aiohttp.ClientSession}}
 active_wordchain = {}
 
-
-async def is_valid_english_word(word: str) -> bool:
-    """Check if a word exists in the English dictionary using the Free Dictionary API."""
-    url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word.lower()}"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
-            if resp.status == 200:
-                data = await resp.json()
-                return isinstance(data, list) and "word" in data[0]
-            return False
-
-
-def number_to_emoji(num: int) -> str:
-    """Convert a number into emoji digits (e.g. 123 -> 1️⃣2️⃣3️⃣)."""
-    emoji_map = {
-        "0": "0️⃣", "1": "1️⃣", "2": "2️⃣", "3": "3️⃣", "4": "4️⃣",
-        "5": "5️⃣", "6": "6️⃣", "7": "7️⃣", "8": "8️⃣", "9": "9️⃣"
-    }
-    return "".join(emoji_map.get(d, d) for d in str(num))
-
-
+# ------------------- Word Chain Command -------------------
 @bot.command(name="wordchain")
 async def wordchain(ctx, starting_word: str):
     """Start a never-ending word chain game."""
@@ -1076,97 +1138,124 @@ async def wordchain(ctx, starting_word: str):
         await ctx.send("⚠️ **[A word chain is already running in this channel]**")
         return
 
+    # Start a session once for the game
+    session = aiohttp.ClientSession()
+
+    # Helper to validate a word using Free Dictionary API
+    async def is_valid_word(word: str) -> bool:
+        url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word.lower()}"
+        try:
+            async with session.get(url) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    return isinstance(data, list) and "word" in data[0]
+        except:
+            return False
+        return False
+
     # Validate starting word
-    if not await is_valid_english_word(starting_word):
+    if not await is_valid_word(starting_word):
+        await session.close()
         await ctx.send(f"❌ **['{starting_word}' is not a valid English word]**")
         return
 
+    # Initialize the game
     active_wordchain[channel.id] = {
         "current_word": starting_word.lower(),
         "last_user": ctx.author.id,
-        "chain_length": 0,
-        "first_message_done": False
+        "chain_length": 1,  # Starts at 1
+        "first_message_done": False,
+        "session": session
     }
 
     await ctx.send(
         f"🔤 **[Word Chain Started!]**\n"
         f"Starting word: **{starting_word}**\n"
-        f"Next word must start with **{starting_word[-1].upper()}**!"
+        f"Chain length: 1"
     )
 
     def check(msg):
         return (
             msg.channel == channel
             and not msg.author.bot
-            and msg.content.isalpha()  # only allow alphabetic words
+            and msg.content.isalpha()  # Only allow alphabetic words
         )
 
-    while True:
-        try:
+    try:
+        while True:
             msg = await bot.wait_for("message", check=check)
             word = msg.content.lower()
 
             game = active_wordchain.get(channel.id)
             if not game:
-                break  # game manually ended
+                break  # Game ended manually
 
             last_word = game["current_word"]
             last_user = game["last_user"]
 
-            # Prevent same user twice
+            # Prevent same user from playing twice in a row
             if msg.author.id == last_user:
-                await channel.send(f"🚫 **[ {msg.author.mention}, you can’t play twice in a row]**")
+                await channel.send(f"🚫 **[{msg.author.mention}, you can’t play twice in a row]**")
                 continue
 
-            # Check first letter rule
+            # Check first letter matches last letter
             if word[0] != last_word[-1]:
                 await channel.send(
-                    f"❌ **[ {msg.author.mention} broke the chain]**\n"
-                    f"Word must start with **{last_word[-1].upper()}**."
+                    f"❌ **[{msg.author.mention} broke the chain]**\n"
+                    f"The word must start with the last letter of the previous word."
                 )
-                del active_wordchain[channel.id]
-                break
+                break  # session will close in finally
 
-            # Validate dictionary
-            if not await is_valid_english_word(word):
-                await channel.send(f"📘 **[ {msg.author.mention}, '{word}' is not a valid English word]**")
+            # Validate word in dictionary
+            if not await is_valid_word(word):
+                await channel.send(f"📘 **[{msg.author.mention}, '{word}' is not a valid English word]**")
                 continue
 
-            # ✅ Valid move
+            # Valid move
             game["current_word"] = word
             game["last_user"] = msg.author.id
             game["chain_length"] += 1
-
-            # React with emoji digits
             chain_num = game["chain_length"]
-            for digit_emoji in number_to_emoji(chain_num):
-                await msg.add_reaction(digit_emoji)
 
-            # First message shows next letter, later ones just “accepted”
-            if not game["first_message_done"]:
-                await channel.send(
-                    f"✅ **{word.capitalize()}** accepted! Next word must start with **{word[-1].upper()}**."
-                )
-                game["first_message_done"] = True
-            else:
-                await channel.send(f"✅ **{word.capitalize()}** accepted!")
+            # Only show chain length and accepted word
+            await channel.send(f"✅ **{word.capitalize()}** accepted! Chain length: {chain_num}")
 
-        except Exception as e:
-            await channel.send(f"⚠️ **[Error: `{e}`]**")
-            break
+    except Exception as e:
+        await ctx.send(f"⚠️ **[Error: `{e}`]**")
 
+    finally:
+        # Ensure session is closed and game removed
+        if channel.id in active_wordchain:
+            game = active_wordchain[channel.id]
+            session = game.get("session")
+            if session:
+                await session.close()
+            del active_wordchain[channel.id]
 
+# ------------------- End Word Chain Command -------------------
 @bot.command(name="endwordchain")
 @commands.has_permissions(manage_messages=True)
 async def endwordchain(ctx):
     """Manually end an ongoing word chain game."""
     channel = ctx.channel
-    if channel.id not in active_wordchain:
+    game = active_wordchain.get(channel.id)
+
+    if not game:
         await ctx.send("❌ **[No active word chain in this channel]**")
         return
 
+    # Close session if it exists
+    session = game.get("session")
+    if session:
+        await session.close()
+
+    # Remove game from active tracking
     del active_wordchain[channel.id]
-    await ctx.send("🛑 **[The word chain has been ended by a moderator]**")
+
+    await ctx.send(
+        f"🛑 **[The word chain has been ended by a moderator]**\n"
+        f"Last word: **{game['current_word']}** | Chain length: {game['chain_length']}"
+    )
 
 import aiohttp            # For making async HTTP requests to the OpenAI proxy
 import discord            # For Discord embed/message formatting
@@ -1177,12 +1266,13 @@ import asyncio            # For async operations (e.g. sending messages, delays)
 async def ask_command(ctx, *, question: str):
     """Ask ChatGPT a question without needing an API key, splitting long answers neatly."""
     import re
+    import aiohttp
+
+    thinking_msg = await ctx.send("🤖 **[Thinking...]**")
 
     try:
-        thinking_msg = await ctx.send("🤖 **[Thinking...]**")
-
-        async with aiohttp.ClientSession() as session:
-            # Free ChatGPT API proxy endpoint
+        timeout = aiohttp.ClientTimeout(total=15)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.post(
                 "https://api.openai-proxy.com/v1/chat/completions",
                 json={
@@ -1191,6 +1281,8 @@ async def ask_command(ctx, *, question: str):
                     "max_tokens": 2000
                 },
             ) as resp:
+
+                # Check HTTP status
                 if resp.status != 200:
                     await thinking_msg.edit(
                         content=f"⚠️ **[Something went wrong]** API returned {resp.status}"
@@ -1198,7 +1290,17 @@ async def ask_command(ctx, *, question: str):
                     return
 
                 data = await resp.json()
-                answer = data["choices"][0]["message"]["content"]
+                
+                # Safely extract answer
+                try:
+                    answer = data.get("choices", [{}])[0].get("message", {}).get("content", None)
+                    if not answer:
+                        raise ValueError("No content returned from API")
+                except Exception:
+                    await thinking_msg.edit(
+                        content="⚠️ **[Failed to parse API response]**"
+                    )
+                    return
 
         # Split answer into readable chunks at sentence boundaries
         sentences = re.split(r'(?<=[.!?]) +', answer)
@@ -1210,10 +1312,7 @@ async def ask_command(ctx, *, question: str):
                 chunks.append(current_chunk)
                 current_chunk = sentence
             else:
-                if current_chunk:
-                    current_chunk += " " + sentence
-                else:
-                    current_chunk = sentence
+                current_chunk = f"{current_chunk} {sentence}".strip()
 
         if current_chunk:
             chunks.append(current_chunk)
@@ -1227,8 +1326,12 @@ async def ask_command(ctx, *, question: str):
             content = f"{header}**Q:** {question}\n**A:** {chunk}"
             await ctx.send(content)
 
+    except asyncio.TimeoutError:
+        await thinking_msg.edit("⚠️ **[Request timed out — try again later.]**")
+    except aiohttp.ClientError as e:
+        await thinking_msg.edit(f"⚠️ **[Network error: {e}]**")
     except Exception as e:
-        await ctx.send(f"⚠️ **[Something went wrong]** {e}")
+        await thinking_msg.edit(f"⚠️ **[Something went wrong]** {e}")
 
 # ------------------- Poll & Announce -----------------------
 DURATION_TOKEN_RE = re.compile(r"^(\d+)([wdhm])$")
@@ -1371,7 +1474,7 @@ async def test_command(ctx):
         return await ctx.send("**❌ [You do not have permission to use this command]**")
 
     embed = discord.Embed(
-        title="🧪 **Nexus Ultimate System Diagnostic**",
+        title="🧪 **Nexus System Diagnostic**",
         description="Running full comprehensive diagnostic scan...",
         color=discord.Color.orange()
     )
