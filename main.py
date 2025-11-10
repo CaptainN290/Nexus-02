@@ -1130,8 +1130,9 @@ active_wordchain = {}
 
 # ------------------- Word Chain Command -------------------
 @bot.command(name="wordchain")
-async def wordchain(ctx, starting_word: str):
+async def wordchain(ctx, word: str):  # <-- parameter renamed to 'word'
     """Start a never-ending word chain game."""
+    starting_word = word  # local variable for your existing logic
     channel = ctx.channel
 
     if channel.id in active_wordchain:
@@ -1261,12 +1262,11 @@ import aiohttp            # For making async HTTP requests to the OpenAI proxy
 import discord            # For Discord embed/message formatting
 from discord.ext import commands  # For creating the command itself
 import asyncio            # For async operations (e.g. sending messages, delays)
+import re                 # For splitting answers into chunks
 
 @bot.command(name="ask")
-async def ask_command(ctx, *, question: str):
+async def ask_command(ctx, *, question: str):  # <-- parameter is 'question'
     """Ask ChatGPT a question without needing an API key, splitting long answers neatly."""
-    import re
-    import aiohttp
 
     thinking_msg = await ctx.send("🤖 **[Thinking...]**")
 
@@ -1282,7 +1282,6 @@ async def ask_command(ctx, *, question: str):
                 },
             ) as resp:
 
-                # Check HTTP status
                 if resp.status != 200:
                     await thinking_msg.edit(
                         content=f"⚠️ **[Something went wrong]** API returned {resp.status}"
@@ -1291,7 +1290,6 @@ async def ask_command(ctx, *, question: str):
 
                 data = await resp.json()
                 
-                # Safely extract answer
                 try:
                     answer = data.get("choices", [{}])[0].get("message", {}).get("content", None)
                     if not answer:
@@ -1302,7 +1300,7 @@ async def ask_command(ctx, *, question: str):
                     )
                     return
 
-        # Split answer into readable chunks at sentence boundaries
+        # Split answer into readable chunks
         sentences = re.split(r'(?<=[.!?]) +', answer)
         chunks = []
         current_chunk = ""
@@ -1317,10 +1315,8 @@ async def ask_command(ctx, *, question: str):
         if current_chunk:
             chunks.append(current_chunk)
 
-        # Delete "Thinking..." message
         await thinking_msg.delete()
 
-        # Send each chunk with bold Q/A header
         for i, chunk in enumerate(chunks, 1):
             header = f"🟢 **[OpenAI Answer (Part {i}/{len(chunks)})]**\n"
             content = f"{header}**Q:** {question}\n**A:** {chunk}"
