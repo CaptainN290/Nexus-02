@@ -367,51 +367,101 @@ async def clear(ctx, amount: int, *args):
 
 # ------------------- Application Commands -----------------------
 
-app_questions = {}
+app_setups = {}  # Stores setup data per guild: {guild_id: {"channel_id": int, "title": str, "questions": list}}
 
 class CloseAppButton(discord.ui.View):
-    def __init__(self):
+    def __init__(self, bot, member):
         super().__init__(timeout=None)
-        self.add_item(
-            discord.ui.Button(label="Close Application", style=discord.ButtonStyle.red, custom_id="close_app")
-        )
+        self.bot = bot
+        self.member = member
 
     @discord.ui.button(label="Close Application", style=discord.ButtonStyle.red, custom_id="close_button")
     async def close_app(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Triggered when user clicks 'Close Application'"""
         await interaction.response.send_message(
-            "**✅ [Application marked as complete — staff will review soon!]**", ephemeral=True
+            "**✅ [Application marked as complete — staff will review soon!]**",
+            ephemeral=True
         )
+
+        # Gather all answers (messages by applicant)
+        messages = [
+            m async for m in interaction.channel.history(limit=100, oldest_first=True)
+            if m.author == interaction.user and not m.content.startswith("**✅")
+        ]
+        answers_text = "\n".join([f"**Q{i+1}:** {m.content}" for i, m in enumerate(messages, 1)]) or "_No answers provided._"
+
+        guild_id = interaction.guild.id
+        setup = app_setups.get(guild_id)
+        if not setup:
+            return await interaction.channel.send("⚠️ **[No setup found for this guild.]**")
+
+        # Send compiled answers to review channel
+        review_channel = interaction.guild.get_channel(setup["channel_id"])
+        if not review_channel:
+            return await interaction.channel.send("⚠️ **[Review channel not found — please redo `n/setupapp`.]**")
+
+        embed = discord.Embed(
+            title=f"📋 Application from {interaction.user}",
+            description=answers_text,
+            color=discord.Color.green()
+        )
+        embed.set_footer(text=f"Submitted from #{interaction.channel.name}")
+        await review_channel.send(embed=embed)
+
         await interaction.channel.send(f"**📩 [{interaction.user} has completed their application.]**")
 
+
 @bot.command(name="setupapp")
-async def setup_app(ctx, *, questions: str = None):
+async def setup_app(ctx, review_channel: discord.TextChannel = None, *, content: str = None):
+    """Set up the application system."""
     if not ctx.author.guild_permissions.manage_guild:
         return await ctx.send(no_perm_msg("set up applications"))
 
-    if not questions:
+    if not review_channel or not content:
         return await ctx.send(
-            "**❌ [Please provide questions separated by `|`.]**\n"
-            "Example: `n/setupapp What is your name? | Why do you want to join? | How active are you?`"
+            "**❌ [Invalid format]**\n"
+            "Usage: `n/setupapp #channel Application Title - Question 1 | Question 2 | Question 3`"
         )
 
-    question_list = [q.strip() for q in questions.split("|") if q.strip()]
-    app_questions[ctx.guild.id] = question_list
+    if "-" not in content:
+        return await ctx.send("**❌ [You must separate the title and questions with a `-`]**")
 
-    await ctx.send(f"**✅ [Application setup complete — {len(question_list)} questions loaded.]**")
+    title_part, questions_part = [part.strip() for part in content.split("-", 1)]
+    questions = [q.strip() for q in questions_part.split("|") if q.strip()]
+
+    if not questions:
+        return await ctx.send("**❌ [You must provide at least one question separated by `|`]**")
+
+    app_setups[ctx.guild.id] = {
+        "channel_id": review_channel.id,
+        "title": title_part,
+        "questions": questions
+    }
+
+    await ctx.send(
+        f"**✅ [Application setup complete]**\n"
+        f"**Title:** {title_part}\n"
+        f"**Questions Loaded:** {len(questions)}\n"
+        f"**Review Channel:** {review_channel.mention}"
+    )
+
 
 @bot.command(name="openapp")
 async def open_app(ctx, member: discord.Member = None):
+    """Open an application channel for a user."""
     if not member:
         member = ctx.author
 
-    if ctx.guild.id not in app_questions:
-        return await ctx.send("**❌ [No application questions set! Use `n/setupapp` first.]**")
+    guild_id = ctx.guild.id
+    setup = app_setups.get(guild_id)
+    if not setup:
+        return await ctx.send("**❌ [No application system setup. Use `n/setupapp` first.]**")
 
-    # Only admins or mods can open applications for others
     if member != ctx.author and not ctx.author.guild_permissions.manage_guild:
         return await ctx.send(no_perm_msg("open applications for others"))
 
-    questions = app_questions[ctx.guild.id]
+    title = setup["title"]
+    questions = setup["questions"]
 
     overwrites = {
         ctx.guild.default_role: discord.PermissionOverwrite(view_channel=False),
@@ -427,13 +477,13 @@ async def open_app(ctx, member: discord.Member = None):
     channel = await ctx.guild.create_text_channel(channel_name, overwrites=overwrites, reason="New application")
 
     embed = discord.Embed(
-        title="📋 Application Form",
+        title=f"📋 {title}",
         description="\n".join([f"**Q{i+1}.** {q}" for i, q in enumerate(questions)]),
         color=discord.Color.blurple()
     )
     embed.set_footer(text="Please answer each question below. Press 'Close Application' when finished.")
 
-    view = CloseAppButton()
+    view = CloseAppButton(bot, member)
     await channel.send(
         content=f"{member.mention}, please answer each question below to complete your application.",
         embed=embed,
