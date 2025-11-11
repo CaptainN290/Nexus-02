@@ -100,29 +100,43 @@ async def help_command(ctx):
             "**n/invite** - Get the bot's invite link"
         ), inline=False)
 
-        embed.add_field(name="**☻ Fun & Utility**", value=(
-    "**n/say <message>** - Repeat a message\n"
-    "**n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
-    "**n/announce <message>** - Make an announcement\n"
-    "**n/hug @user** - Hug someone\n"
-    "**n/hugall** - Hug everyone\n"
-    "**n/kiss @user** - Kiss someone\n"
-    "**n/flipcoin** - Flip a coin\n"
-    "**n/roll <sides>** or **n/roll 0d0** - Roll dice\n"
-    "**n/8ball <question>** - Magic 8ball\n"
-    "**n/meme** - Get a meme\n"
-    "**n/rps <rock/paper/scissors>** - Play RPS\n"
-    "**n/tictactoe @opponent** - Start Tic Tac Toe\n"
-    "**n/tttmove <1-9>** - Choose board position\n"
-    "**n/connect4 @opponent** - Start Connect 4\n"
-    "**n/c4move <1-7>** - Pick a column\n"
-    "**n/rpg** - Interactive text RPG (type choices directly)\n"
-    "**n/spellduel @opponent** - Spell duel (type actions directly)\n"
-    "**n/rapbattle @opponent** - Rap battle (type comebacks directly)\n"
-    "**n/wordchain <word>** - Start word chain\n"
-    "**n/endwordchain** - End word chain\n"
-    "**n/ask <question>** - Ask OpenAI"
-), inline=False)
+        # Fun & Games
+embed.add_field(
+    name="**☻ Fun & Games**",
+    value=(
+        "**n/hug @user** - Hug someone\n"
+        "**n/hugall** - Hug everyone\n"
+        "**n/kiss @user** - Kiss someone\n"
+        "**n/flipcoin** - Flip a coin\n"
+        "**n/roll <sides>** or **n/roll 0d0** - Roll dice\n"
+        "**n/8ball <question>** - Magic 8ball\n"
+        "**n/meme** - Get a meme\n"
+        "**n/rps <rock/paper/scissors>** - Play RPS\n"
+        "**n/tictactoe @opponent** - Start Tic Tac Toe\n"
+        "**n/tttmove <1-9>** - Choose board position\n"
+        "**n/connect4 @opponent** - Start Connect 4\n"
+        "**n/c4move <1-7>** - Pick a column\n"
+        "**n/rpg** - Interactive text RPG\n"
+        "**n/spellduel @opponent** - Spell duel\n"
+        "**n/rapbattle @opponent** - Rap battle\n"
+        "**n/wordchain <word>** - Start word chain\n"
+        "**n/endwordchain** - End word chain"
+    ),
+    inline=False
+)
+
+# Utility
+embed.add_field(
+    name="**⚡︎ Utility**",
+    value=(
+        "**n/say <message>** - Repeat a message\n"
+        "**n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
+        "**n/announce <message>** - Make an announcement\n"
+        "**n/ask <question>** - Ask OpenAI\n"
+        "**n/define <word>** - Look up the meaning of any word"
+    ),
+    inline=False
+)
 
         embed.set_footer(
             text=f"Made by @captainn29 • Requested by {ctx.author}",
@@ -1376,6 +1390,78 @@ async def ask_command(ctx, *, question: str):  # <-- parameter is 'question'
         await thinking_msg.edit("⚠️ **[Request timed out — try again later.]**")
     except aiohttp.ClientError as e:
         await thinking_msg.edit(f"⚠️ **[Network error: {e}]**")
+    except Exception as e:
+        await thinking_msg.edit(f"⚠️ **[Something went wrong]** {e}")
+
+# ----Define----
+
+import discord
+from discord.ext import commands
+import aiohttp
+
+@bot.command(name="define")
+async def define(ctx, *, word: str):
+    """Define a word using the Free Dictionary API."""
+    thinking_msg = await ctx.send(f"📘 **[Looking up '{word}'...]**")
+
+    try:
+        # Create HTTP session
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word.lower()}") as resp:
+                if resp.status != 200:
+                    await thinking_msg.edit(
+                        content=f"❌ **[Could not find a definition for '{word}']**"
+                    )
+                    return
+
+                data = await resp.json()
+
+        # Parse the data safely
+        if not isinstance(data, list) or not data:
+            await thinking_msg.edit(f"❌ **[No results found for '{word}']**")
+            return
+
+        entry = data[0]
+        meanings = entry.get("meanings", [])
+        phonetics = entry.get("phonetics", [])
+
+        # Build definition text
+        definition_text = ""
+        for meaning in meanings:
+            part_of_speech = meaning.get("partOfSpeech", "unknown").capitalize()
+            definitions = meaning.get("definitions", [])
+            if definitions:
+                definition = definitions[0].get("definition", "No definition found.")
+                example = definitions[0].get("example")
+                definition_text += f"**{part_of_speech}:** {definition}\n"
+                if example:
+                    definition_text += f"_Example:_ {example}\n"
+                definition_text += "\n"
+
+        if not definition_text:
+            definition_text = "No definitions available."
+
+        # Create the embed
+        embed = discord.Embed(
+            title=f"📖 Definition of '{word.capitalize()}'",
+            description=definition_text.strip(),
+            color=discord.Color.blurple()
+        )
+
+        # Add pronunciation info if available
+        if phonetics:
+            for ph in phonetics:
+                if "audio" in ph and ph["audio"]:
+                    embed.add_field(
+                        name="🔊 Pronunciation Audio",
+                        value=f"[Listen Here]({ph['audio']})",
+                        inline=False
+                    )
+                    break
+
+        await thinking_msg.delete()
+        await ctx.send(embed=embed)
+
     except Exception as e:
         await thinking_msg.edit(f"⚠️ **[Something went wrong]** {e}")
 
