@@ -73,7 +73,7 @@ async def help_command(ctx):
             "**n/warn @user <reason>** - Warn a member\n"
             "**n/snipe [0-5] [#channel]** - Retrieve recently deleted messages\n"
             "**n/clear <amount> [ex:] [images/@user]** - Delete a certain amount of messages"
-            "**n/setupapp <question> | <question>** - Set questions for applications\n" 
+            "**n/setupapp #channel <title> - <question> | <question>** - Set questions for applications\n" 
             "**n/openapp [@user]** - Apply for a role or membership\n"
         ), inline=False)
 
