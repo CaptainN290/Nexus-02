@@ -1592,194 +1592,188 @@ import aiohttp
 import asyncio
 import platform
 import psutil
-import sys
+import shutil
 import time
 import traceback
+from datetime import datetime
 
-OWNER_ID = 1210700638904656027  # 👑 Your Discord user ID
+OWNER_ID = 1210700638904656027
+bot_start_time = datetime.utcnow()
+active_wordchain = {}
 
+# ---------------- PAGINATION VIEW --------------------
+class DiagnosticPaginator(discord.ui.View):
+    def __init__(self, pages, timeout=180):
+        super().__init__(timeout=timeout)
+        self.pages = pages
+        self.current = 0
+
+    async def update_message(self, interaction):
+        embed = self.pages[self.current]
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="Previous", style=discord.ButtonStyle.secondary)
+    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.current = (self.current - 1) % len(self.pages)
+        await self.update_message(interaction)
+
+    @discord.ui.button(label="Next", style=discord.ButtonStyle.secondary)
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.current = (self.current + 1) % len(self.pages)
+        await self.update_message(interaction)
+
+# ---------------- GRAPH HELPERS ----------------------
+def usage_bar(percent, length=20):
+    """Return a simple ASCII bar graph for a percentage (0-100)."""
+    filled_len = int(round(length * percent / 100))
+    return f"[{'█'*filled_len}{'░'*(length-filled_len)}] {percent}%"
+
+# ---------------- FULL TEST COMMAND ------------------
 @bot.command(name="test")
 async def test_command(ctx):
-    """Run the ultimate full diagnostic check for the Nexus bot, including all commands."""
-    
+    """Run a full diagnostic check for the Nexus bot (owner only)."""
     if ctx.author.id != OWNER_ID:
         return await ctx.send("**❌ [You do not have permission to use this command]**")
 
-    embed = discord.Embed(
-        title="🧪 **Nexus System Diagnostic**",
-        description="Running full comprehensive diagnostic scan...",
-        color=discord.Color.orange()
-    )
-    await ctx.send(embed=embed)
+    results_sys, results_net, results_cmd, results_misc, results_guilds = [], [], [], [], []
+    passed, failed, warnings = 0, 0, 0
 
-    results = []
-    passed = 0
-    failed = 0
-    warnings = 0
+    now = datetime.utcnow()
+    uptime_delta = now - bot_start_time
+    days, remainder = divmod(uptime_delta.total_seconds(), 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, _ = divmod(remainder, 60)
+    uptime_str = f"{int(days)}d {int(hours)}h {int(minutes)}m"
 
-    # ------------------- DISCORD CONNECTION -------------------
-    try:
-        latency = round(bot.latency * 1000)
-        results.append(f"✅ **[🧠 Discord Connection Working ({latency}ms latency)]**")
-        passed += 1
-    except Exception as e:
-        results.append(f"❌ **[🧠 Discord Connection Failed]** {e}")
-        failed += 1
+    # ---------------- SYSTEM INFO ------------------------
+    mem = psutil.Process().memory_info().rss / 1024 / 1024
+    total_mem = psutil.virtual_memory().total / 1024 / 1024
+    mem_percent = psutil.virtual_memory().percent
+    cpu_count = psutil.cpu_count(logical=True)
+    cpu_percent = psutil.cpu_percent(interval=0.5)
+    per_core = psutil.cpu_percent(interval=0.5, percpu=True)
+    disk_total, disk_used, disk_free = shutil.disk_usage("/")
+    disk_percent = round(disk_used / disk_total * 100, 2)
+    load_avg = psutil.getloadavg() if hasattr(psutil, "getloadavg") else ("N/A", "N/A", "N/A")
 
-    # ------------------- MODULE IMPORTS -------------------
-    modules_to_check = ["aiohttp", "psutil", "discord", "asyncio"]
+    # Discord guild memory (approximate, based on cached messages)
+    discord_mem = 0
+    for g in bot.guilds:
+        for m in g.members:
+            if hasattr(m, "_cached_messages"):
+                discord_mem += sum(len(msg.content) for msg in m._cached_messages)
+
+    # Build per-core CPU graph
+    cpu_graphs = [f"Core {i+1}: {usage_bar(p)}" for i, p in enumerate(per_core)]
+    mem_graph = f"Memory Usage: {usage_bar(mem_percent)} ({mem:.2f}MB / {total_mem:.2f}MB)"
+
+    results_sys.extend([
+        f"**Uptime:** {uptime_str}",
+        f"**Bot Latency:** {round(bot.latency*1000)}ms",
+        f"**Python Version:** {platform.python_version()}",
+        f"**discord.py Version:** {discord.__version__}",
+        f"**CPU Cores:** {cpu_count} | Total Usage: {cpu_percent}%",
+        *cpu_graphs,
+        mem_graph,
+        f"**Disk Usage:** {disk_used//1024**2}MB / {disk_total//1024**2}MB ({disk_percent}%)",
+        f"**Load Average (1,5,15min):** {load_avg}",
+        f"**OS:** {platform.system()} {platform.release()}",
+        f"**Discord Guild Cached Messages Size:** {discord_mem} chars"
+    ])
+
+    # ---------------- MODULE CHECKS ----------------------
+    modules_to_check = ["aiohttp", "psutil", "discord", "asyncio", "platform", "time", "shutil"]
     for mod in modules_to_check:
         try:
-            __import__(mod)
-            results.append(f"✅ **[📦 {mod} Module Imported Successfully]**")
+            module_obj = __import__(mod)
+            results_misc.append(f"✅ {mod} imported ({getattr(module_obj,'__version__','N/A')})")
             passed += 1
         except ImportError as e:
-            results.append(f"❌ **[📦 {mod} Module Import Failed]** {e}")
+            results_misc.append(f"❌ {mod} import failed: {e}")
             failed += 1
 
-    # ------------------- NETWORK CHECKS -------------------
+    # ---------------- NETWORK / API CHECKS ----------------
     async def check_url(name, url, method="GET", json_data=None, timeout=5):
         nonlocal passed, failed, warnings
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.request(method, url, json=json_data, timeout=timeout) as resp:
                     if 200 <= resp.status < 300:
-                        results.append(f"✅ **[{name} Working (Status {resp.status})]**")
+                        results_net.append(f"✅ {name} OK ({resp.status})")
                         passed += 1
                         return True
                     else:
-                        results.append(f"⚠️ **[{name} Responded with {resp.status}]**")
+                        results_net.append(f"⚠️ {name} responded {resp.status}")
                         warnings += 1
                         return False
         except Exception as e:
-            results.append(f"❌ **[{name} Failed]** {e}")
+            results_net.append(f"❌ {name} failed: {e}")
             failed += 1
             return False
 
-    # Flask local server
-    await check_url("🌐 Flask Uptime Server", "http://127.0.0.1:5000")
+    await check_url("🌐 Flask Server", "http://127.0.0.1:5000")
+    await check_url("🌍 Outbound HTTP", "https://api.ipify.org?format=json")
+    await check_url("🤖 Ask Proxy API", "https://api.openai-proxy.com/v1/chat/completions",
+                    method="POST",
+                    json_data={"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"Hello"}],"max_tokens":5},
+                    timeout=8)
+    await check_url("📘 Dictionary API", "https://api.dictionaryapi.dev/api/v2/entries/en/test")
 
-    # Outbound HTTP
-    ip_success = await check_url("🌍 Outbound HTTP", "https://api.ipify.org?format=json")
-
-    # Ask Proxy API
-    ask_success = await check_url(
-        "🤖 Ask Command Proxy",
-        "https://api.openai-proxy.com/v1/chat/completions",
-        method="POST",
-        json_data={
-            "model": "gpt-3.5-turbo",
-            "messages": [{"role": "user", "content": "Hello"}],
-            "max_tokens": 5
-        },
-        timeout=8
-    )
-
-    # Dictionary API (Wordchain)
-    wordchain_success = await check_url(
-        "📘 Dictionary API (Wordchain)", 
-        "https://api.dictionaryapi.dev/api/v2/entries/en/test"
-    )
-
-    # ------------------- PERMISSIONS CHECK -------------------
-    try:
-        perms = ctx.channel.permissions_for(ctx.guild.me)
-        if perms.send_messages and perms.embed_links:
-            results.append("✅ **[🔐 Permissions OK (Embed + Message Send)]**")
-            passed += 1
-        else:
-            results.append("⚠️ **[🔐 Limited Permissions]** Missing `Embed Links` or `Send Messages`.")
-            warnings += 1
-    except Exception as e:
-        results.append(f"❌ **[🔐 Permissions Check Failed]** {e}")
-        failed += 1
-
-    # ------------------- BOT INFO -------------------
-    try:
-        python_ver = platform.python_version()
-        discord_ver = discord.__version__
-        server_count = len(bot.guilds)
-        user_count = len(set(bot.get_all_members()))
-        mem = psutil.Process().memory_info().rss / 1024 / 1024
-        results.append(f"ℹ️ **[Python Version: {python_ver}]**")
-        results.append(f"ℹ️ **[discord.py Version: {discord_ver}]**")
-        results.append(f"ℹ️ **[Connected Servers: {server_count}]**")
-        results.append(f"ℹ️ **[Unique Users Cached: {user_count}]**")
-        results.append(f"ℹ️ **[Bot Memory Usage: {mem:.2f} MB]**")
-        passed += 1
-    except Exception as e:
-        results.append(f"⚠️ **[Bot Info Retrieval Failed]** {e}")
-        warnings += 1
-
-    # ------------------- DYNAMIC COMMAND CHECKS -------------------
+    # ---------------- COMMAND CHECKS ---------------------
     for command in bot.commands:
+        if command.hidden:
+            continue
+        cmd_name = command.name
+        start_time = time.time()
         try:
-            if command.hidden:
-                continue  # Skip hidden commands
-            cmd_name = command.name
-            results.append(f"✅ **[⚡ Command '{cmd_name}' Loaded Successfully]**")
+            # minimal safe invocation
+            if cmd_name == "ping":
+                await ctx.invoke(command)
+            elif cmd_name == "say":
+                await ctx.invoke(command, message="Test")
+            elif cmd_name == "ask":
+                await ctx.invoke(command, question="Hello?")
+            elif cmd_name == "wordchain":
+                results_cmd.append(f"⚡ {cmd_name} loaded (dummy not invoked)")
+                continue
+            elif cmd_name == "status":
+                results_cmd.append(f"⚡ {cmd_name} loaded (manual check recommended)")
+                continue
+            else:
+                results_cmd.append(f"⚡ {cmd_name} loaded")
+                continue
+            latency_cmd = round((time.time() - start_time)*1000, 2)
+            results_cmd.append(f"✅ {cmd_name} OK ({latency_cmd}ms)")
             passed += 1
-
-            # Try minimal invocations for interactive commands
-            try:
-                if cmd_name == "ping":
-                    start = time.time()
-                    await ctx.invoke(command)
-                    elapsed = round((time.time() - start) * 1000)
-                    results.append(f"✅ **[⚡ 'ping' Response OK ({elapsed}ms)]**")
-
-                elif cmd_name == "ask" and ask_success:
-                    await ctx.invoke(command, question="2+2")
-                    results.append(f"✅ **[⚡ 'ask' Test Invoked Successfully]**")
-
-                elif cmd_name == "wordchain" and wordchain_success:
-                    await ctx.invoke(command, word="test")
-                    results.append(f"✅ **[⚡ 'wordchain' Test Invoked Successfully]**")
-
-                elif cmd_name in ["say", "meme", "rps", "tictactoe", "connect4"]:
-                    # Minimal test: invoke with safe parameters
-                    if cmd_name == "say":
-                        await ctx.invoke(command, message="Test")
-                    elif cmd_name == "meme":
-                        await ctx.invoke(command)
-                    elif cmd_name == "rps":
-                        await ctx.invoke(command, choice="rock")
-                    elif cmd_name == "tictactoe":
-                        # pass self to skip opponent interaction
-                        await ctx.invoke(command, opponent=ctx.author)
-                    elif cmd_name == "connect4":
-                        await ctx.invoke(command, opponent=ctx.author)
-                    results.append(f"✅ **[⚡ '{cmd_name}' Interactive Test Invoked Successfully]**")
-            except Exception as e:
-                tb = traceback.format_exc(limit=2)
-                results.append(f"❌ **[⚡ Command '{cmd_name}' Test Failed]** {e}\n```py\n{tb}```")
-                failed += 1
-
         except Exception as e:
             tb = traceback.format_exc(limit=2)
-            results.append(f"❌ **[⚡ Command '{cmd_name}' Failed to Load]** {e}\n```py\n{tb}```")
+            results_cmd.append(f"❌ {cmd_name} failed: {e}\n```py\n{tb}```")
             failed += 1
 
-    # ------------------- FINAL SUMMARY -------------------
-    total = passed + failed + warnings
-    if failed == 0 and warnings == 0:
-        summary = f"✅ All {passed}/{total} checks passed. System fully operational."
-        color = discord.Color.green()
-    elif failed == 0:
-        summary = f"⚠️ {warnings}/{total} checks returned warnings."
-        color = discord.Color.gold()
-    else:
-        summary = f"❌ {failed}/{total} checks failed. Please review issues above."
-        color = discord.Color.red()
+    # ---------------- PER-GUILD STATS -------------------
+    for guild in bot.guilds:
+        try:
+            members = guild.member_count
+            channels = len(guild.channels)
+            roles = len(guild.roles)
+            boosts = guild.premium_subscription_count
+            emojis = len(guild.emojis)
+            results_guilds.append(
+                f"**{guild.name}** | Members: {members}, Channels: {channels}, Roles: {roles}, Boosts: {boosts}, Emojis: {emojis}"
+            )
+        except Exception as e:
+            results_guilds.append(f"❌ {guild.name} stats failed: {e}")
 
-    embed = discord.Embed(
-        title="🧪 **Nexus System Diagnostic**",
-        description="\n".join(results),
-        color=color
-    )
-    embed.set_footer(text=summary)
+    # ---------------- EMBED PAGES ------------------------
+    embed_sys = discord.Embed(title="📊 System Info", description="\n".join(results_sys), color=discord.Color.blue())
+    embed_net = discord.Embed(title="🌐 Network / API Info", description="\n".join(results_net), color=discord.Color.green())
+    embed_cmd = discord.Embed(title="⚡ Commands Loaded / Tested", description="\n".join(results_cmd), color=discord.Color.purple())
+    embed_misc = discord.Embed(title="🛠️ Modules / Imports", description="\n".join(results_misc), color=discord.Color.orange())
+    embed_guilds = discord.Embed(title="🏰 Per-Guild Stats", description="\n".join(results_guilds), color=discord.Color.teal())
 
-    await ctx.send(embed=embed)
+    pages = [embed_sys, embed_net, embed_cmd, embed_misc, embed_guilds]
+    paginator = DiagnosticPaginator(pages)
+    await ctx.send(embed=pages[0], view=paginator)
 
 # ------------------- Status Command -----------------------
 @bot.command()
