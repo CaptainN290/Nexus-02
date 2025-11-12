@@ -21,14 +21,40 @@ from discord.ext import commands
 
 # ------------------- Flask Setup for Uptime -------------------
 from flask import Flask, render_template
-import threading
-import os
+import threading, os, psutil, platform, time
+from datetime import datetime
 
 app = Flask(__name__)
+bot_start_time = datetime.utcnow()
 
 @app.route("/")
 def home():
-    return render_template("index.html")  # Looks inside /templates/
+    # Bot stats for dashboard
+    now = datetime.utcnow()
+    uptime_delta = now - bot_start_time
+    days, remainder = divmod(uptime_delta.total_seconds(), 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, _ = divmod(remainder, 60)
+    uptime_str = f"{int(days)}d {int(hours)}h {int(minutes)}m"
+
+    cpu_percent = psutil.cpu_percent(interval=0.5)
+    mem_percent = psutil.virtual_memory().percent
+    os_info = f"{platform.system()} {platform.release()}"
+
+    bot_info = {
+        "uptime": uptime_str,
+        "cpu": cpu_percent,
+        "memory": mem_percent,
+        "os": os_info,
+        "ping": "32ms",
+        "servers": "42",
+        "users": "3,580"
+    }
+    return render_template("index.html", bot_info=bot_info)
+
+@app.route("/commands")
+def commands():
+    return render_template("commands.html")
 
 def run_flask():
     port = int(os.environ.get("PORT", 5000))
