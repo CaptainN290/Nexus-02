@@ -62,14 +62,18 @@ def run_flask():
 
 threading.Thread(target=run_flask, daemon=True).start()
 
+import discord
+from discord.ext import commands
+from datetime import datetime, timezone  # timezone-aware datetime
+
 # ------------------- Discord Bot Setup -----------------------
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
 bot = commands.Bot(command_prefix="n/", intents=intents)
-bot.remove_command("help")  # 👈 This line disables the default help command
-bot_start_time = datetime.utcnow()
+bot.remove_command("help")  # disables the default help command
+bot_start_time = datetime.now(timezone.utc)  # ✅ use timezone-aware UTC datetime
 
 # ------------------- Helper -----------------------
 def no_perm_msg(action):
