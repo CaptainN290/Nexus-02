@@ -20,11 +20,15 @@ import discord
 from discord.ext import commands
 
 # ------------------- Flask Setup for Uptime -------------------
+from flask import Flask, render_template
+import threading
+import os
+
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Bot is running!"
+    return render_template("index.html")  # Looks inside /templates/
 
 def run_flask():
     port = int(os.environ.get("PORT", 5000))
