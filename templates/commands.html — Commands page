@@ -1,53 +1,128 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Nexus Bot Commands</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus Bot Commands</title>
+<style>
+body {
+  font-family: "Poppins", sans-serif;
+  background: #0e0e10;
+  color: white;
+  padding: 40px 20px;
+  line-height: 1.6;
+}
+h1 {
+  color: #5865f2;
+  text-align: center;
+  margin-bottom: 20px;
+}
+section {
+  max-width: 800px;
+  margin: 0 auto 40px;
+}
+h2 {
+  color: #7a7aff;
+  border-bottom: 1px solid #333;
+  padding-bottom: 5px;
+}
+a {
+  color: #5865f2;
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+.back {
+  display: block;
+  text-align: center;
+  margin-bottom: 30px;
+}
+</style>
 </head>
-<body class="bg-dark text-light">
-  <nav class="navbar navbar-dark bg-black">
-    <div class="container">
-      <a class="navbar-brand" href="/">Nexus Bot</a>
-      <div>
-        <a class="btn btn-outline-light btn-sm" href="/">Home</a>
-      </div>
-    </div>
-  </nav>
+<body>
+<a href="/" class="back">← Back to Home</a>
+<h1>⚡ Nexus Bot Commands</h1>
 
-  <main class="container py-4">
-    <h1 class="mb-3">Commands</h1>
+<section>
+<h2>⛊ Moderation</h2>
+<p>
+**n/kick @user <reason>** – Kick a member<br>
+**n/ban @user <reason>** – Ban a member<br>
+**n/unban <user_id>** – Unban a user<br>
+**n/timeout @user <minutes> <reason>** – Timeout a member<br>
+**n/removetimeout @user** – Remove a timeout<br>
+**n/mute @user <reason>** – Mute a member<br>
+**n/unmute @user** – Unmute a member<br>
+**n/warn @user <reason>** – Warn a member<br>
+**n/snipe [0-5] [#channel]** – Retrieve deleted messages<br>
+**n/clear <amount> [ex:] [images/@user]** – Delete messages<br>
+**n/setupapp #channel <title> - <question> | <question>** – Create an application form that sends responses to a specific channel<br>
+**n/openapp [@user]** – Apply for a role or membership
+</p>
+</section>
 
-    {% for section in commands_data %}
-      <div class="card bg-secondary text-light mb-3">
-        <div class="card-body">
-          <h4 class="card-title">{{ section.category }}</h4>
-          <div class="list-group list-group-flush mt-2">
-            {% for cmd in section.items %}
-              <div class="list-group-item bg-dark text-light border-0 py-2">
-                <div class="d-flex justify-content-between">
-                  <div>
-                    <strong class="me-2">**{{ cmd.name }}**</strong>
-                    <div class="small text-muted">{{ cmd.desc }}</div>
-                  </div>
-                  <div class="text-end">
-                    <code class="bg-black px-2 py-1 rounded">{{ cmd.name.split()[0] }}</code>
-                  </div>
-                </div>
-              </div>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-    {% endfor %}
+<section>
+<h2>⚙︎ Channel</h2>
+<p>
+**n/slowmode <seconds>** – Set slowmode delay<br>
+**n/lock** – Lock current channel<br>
+**n/unlock** – Unlock current channel
+</p>
+</section>
 
-    <a class="btn btn-outline-light mt-3" href="/">⬅ Back</a>
-  </main>
+<section>
+<h2>𐀪 Roles</h2>
+<p>
+**n/addrole @user @role** – Give a role<br>
+**n/removerole @user @role** – Remove a role<br>
+**n/rolecatalog** – View all roles
+</p>
+</section>
 
-  <footer class="text-center py-4 text-muted">
-    Made by <strong>@captainn29</strong>
-  </footer>
+<section>
+<h2>𝒊 Info</h2>
+<p>
+**n/userinfo @user** – Info about a user<br>
+**n/serverinfo** – Info about the server<br>
+**n/serverbanner** – Display server banner<br>
+**n/avatar @user** – Member avatar<br>
+**n/ping** – Show latency<br>
+**n/time** – Show current UTC time<br>
+**n/invite** – Get bot invite link
+</p>
+</section>
+
+<section>
+<h2>⚡︎ Utility</h2>
+<p>
+**n/say <message>** – Repeat a message<br>
+**n/poll "question" <option1> <option2> [0d 0h]** – Start a poll<br>
+**n/announce <message>** – Make an announcement<br>
+**n/ask <question>** – Ask OpenAI<br>
+**n/define <word>** – Look up a definition
+</p>
+</section>
+
+<section>
+<h2>☻ Fun & Games</h2>
+<p>
+**n/hug @user** – Hug someone<br>
+**n/hugall** – Hug everyone<br>
+**n/kiss @user** – Kiss someone<br>
+**n/flipcoin** – Flip a coin<br>
+**n/roll <sides>** – Roll dice<br>
+**n/8ball <question>** – Magic 8ball<br>
+**n/meme** – Get a meme<br>
+**n/rps <rock/paper/scissors>** – Play Rock Paper Scissors<br>
+**n/tictactoe @opponent** – Start Tic Tac Toe<br>
+**n/tttmove <1-9>** – Choose a position<br>
+**n/connect4 @opponent** – Start Connect 4<br>
+**n/c4move <1-7>** – Pick a column<br>
+**n/rpg** – Text RPG<br>
+**n/spellduel @opponent** – Spell duel<br>
+**n/rapbattle @opponent** – Rap battle<br>
+**n/wordchain <word>** – Start word chain<br>
+**n/endwordchain** – End word chain
+</p>
+</section>
 </body>
 </html>
