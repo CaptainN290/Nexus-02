@@ -101,9 +101,7 @@ async def help_command(ctx):
         ), inline=False)
 
         # Fun & Games
-embed.add_field(
-    name="**☻ Fun & Games**",
-    value=(
+        embed.add_field(name="**☻ Fun & Games**", value=(
         "**n/hug @user** - Hug someone\n"
         "**n/hugall** - Hug everyone\n"
         "**n/kiss @user** - Kiss someone\n"
@@ -121,9 +119,7 @@ embed.add_field(
         "**n/rapbattle @opponent** - Rap battle\n"
         "**n/wordchain <word>** - Start word chain\n"
         "**n/endwordchain** - End word chain"
-    ),
-    inline=False
-)
+    ), inline=False)
 
 # Utility
 embed.add_field(
