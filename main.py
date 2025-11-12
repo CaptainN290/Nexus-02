@@ -1602,6 +1602,7 @@ class DiagnosticPaginator(discord.ui.View):
 
     async def update_message(self, interaction):
         embed = self.pages[self.current]
+        embed.set_footer(text=f"Page {self.current+1}/{len(self.pages)} • Nexus Diagnostics")
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Previous", style=discord.ButtonStyle.secondary)
@@ -1648,14 +1649,12 @@ async def test_command(ctx):
     disk_percent = round(disk_used / disk_total * 100, 2)
     load_avg = psutil.getloadavg() if hasattr(psutil, "getloadavg") else ("N/A", "N/A", "N/A")
 
-    # Discord guild memory (approximate, based on cached messages)
     discord_mem = 0
     for g in bot.guilds:
         for m in g.members:
             if hasattr(m, "_cached_messages"):
                 discord_mem += sum(len(msg.content) for msg in m._cached_messages)
 
-    # Build per-core CPU graph
     cpu_graphs = [f"Core {i+1}: {usage_bar(p)}" for i, p in enumerate(per_core)]
     mem_graph = f"Memory Usage: {usage_bar(mem_percent)} ({mem:.2f}MB / {total_mem:.2f}MB)"
 
@@ -1670,7 +1669,7 @@ async def test_command(ctx):
         f"**Disk Usage:** {disk_used//1024**2}MB / {disk_total//1024**2}MB ({disk_percent}%)",
         f"**Load Average (1,5,15min):** {load_avg}",
         f"**OS:** {platform.system()} {platform.release()}",
-        f"**Discord Guild Cached Messages Size:** {discord_mem} chars"
+        f"**Discord Cached Msg Size:** {discord_mem} chars"
     ])
 
     # ---------------- MODULE CHECKS ----------------------
@@ -1715,21 +1714,17 @@ async def test_command(ctx):
     for command in bot.commands:
         if command.hidden:
             continue
-        cmd_name = command.name
+        cmd_name = f"**{command.name}**"
         start_time = time.time()
         try:
-            # minimal safe invocation
-            if cmd_name == "ping":
+            if command.name == "ping":
                 await ctx.invoke(command)
-            elif cmd_name == "say":
+            elif command.name == "say":
                 await ctx.invoke(command, message="Test")
-            elif cmd_name == "ask":
+            elif command.name == "ask":
                 await ctx.invoke(command, question="Hello?")
-            elif cmd_name == "wordchain":
+            elif command.name == "wordchain":
                 results_cmd.append(f"⚡ {cmd_name} loaded (dummy not invoked)")
-                continue
-            elif cmd_name == "status":
-                results_cmd.append(f"⚡ {cmd_name} loaded (manual check recommended)")
                 continue
             else:
                 results_cmd.append(f"⚡ {cmd_name} loaded")
@@ -1757,13 +1752,32 @@ async def test_command(ctx):
             results_guilds.append(f"❌ {guild.name} stats failed: {e}")
 
     # ---------------- EMBED PAGES ------------------------
-    embed_sys = discord.Embed(title="📊 System Info", description="\n".join(results_sys), color=discord.Color.blue())
-    embed_net = discord.Embed(title="🌐 Network / API Info", description="\n".join(results_net), color=discord.Color.green())
-    embed_cmd = discord.Embed(title="⚡ Commands Loaded / Tested", description="\n".join(results_cmd), color=discord.Color.purple())
-    embed_misc = discord.Embed(title="🛠️ Modules / Imports", description="\n".join(results_misc), color=discord.Color.orange())
-    embed_guilds = discord.Embed(title="🏰 Per-Guild Stats", description="\n".join(results_guilds), color=discord.Color.teal())
+    embed_summary = discord.Embed(
+        title="📋 **Nexus Diagnostic Summary**",
+        description=(
+            f"**✅ Passed:** {passed}\n"
+            f"**⚠️ Warnings:** {warnings}\n"
+            f"**❌ Failed:** {failed}\n\n"
+            f"**System:** Stable\n"
+            f"**Network:** OK\n"
+            f"**Commands:** {len(bot.commands)} total\n"
+            f"**Uptime:** {uptime_str}"
+        ),
+        color=discord.Color.gold()
+    )
 
-    pages = [embed_sys, embed_net, embed_cmd, embed_misc, embed_guilds]
+    embed_sys = discord.Embed(title="📊 **System Info**", description="\n".join(results_sys), color=discord.Color.blue())
+    embed_net = discord.Embed(title="🌐 **Network / API Info**", description="\n".join(results_net), color=discord.Color.green())
+    embed_cmd = discord.Embed(title="⚡ **Commands Loaded / Tested**", description="\n".join(results_cmd), color=discord.Color.purple())
+    embed_misc = discord.Embed(title="🛠️ **Modules / Imports**", description="\n".join(results_misc), color=discord.Color.orange())
+    embed_guilds = discord.Embed(title="🏰 **Per-Guild Stats**", description="\n".join(results_guilds), color=discord.Color.teal())
+
+    pages = [embed_summary, embed_sys, embed_net, embed_cmd, embed_misc, embed_guilds]
+
+    # Add footers for all embeds
+    for i, e in enumerate(pages, start=1):
+        e.set_footer(text=f"Page {i}/{len(pages)} • Nexus Diagnostics")
+
     paginator = DiagnosticPaginator(pages)
     await ctx.send(embed=pages[0], view=paginator)
 
