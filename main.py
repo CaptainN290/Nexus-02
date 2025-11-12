@@ -122,17 +122,13 @@ async def help_command(ctx):
     ), inline=False)
 
 # Utility
-embed.add_field(
-    name="**⚡︎ Utility**",
-    value=(
+        embed.add_field(name="**⚡︎ Utility**", value=(
         "**n/say <message>** - Repeat a message\n"
         "**n/poll \"question\" <option1> <option2> [0d 0h]** - Start a poll\n"
         "**n/announce <message>** - Make an announcement\n"
         "**n/ask <question>** - Ask OpenAI\n"
         "**n/define <word>** - Look up the meaning of any word"
-    ),
-    inline=False
-)
+    ), inline=False)
 
         embed.set_footer(
             text=f"Made by @captainn29 • Requested by {ctx.author}",
