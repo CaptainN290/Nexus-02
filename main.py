@@ -32,7 +32,7 @@ def home():
     return render_template("index.html")
 
 @app.route("/commands")
-def commands():
+def show_commands():
     return render_template("commands.html")
 
 @app.route("/api/stats")
