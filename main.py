@@ -20,8 +20,8 @@ import discord
 from discord.ext import commands
 
 # ------------------- Flask Setup for Uptime -------------------
-from flask import Flask, render_template
-import threading, os, psutil, platform, time
+from flask import Flask, render_template, jsonify
+import threading, os, psutil, platform
 from datetime import datetime
 
 app = Flask(__name__)
@@ -29,42 +29,52 @@ bot_start_time = datetime.utcnow()
 
 @app.route("/")
 def home():
-    # Bot stats for dashboard
-    now = datetime.utcnow()
-    uptime_delta = now - bot_start_time
-    days, remainder = divmod(uptime_delta.total_seconds(), 86400)
-    hours, remainder = divmod(remainder, 3600)
-    minutes, _ = divmod(remainder, 60)
-    uptime_str = f"{int(days)}d {int(hours)}h {int(minutes)}m"
-
-    cpu_percent = psutil.cpu_percent(interval=0.5)
-    mem_percent = psutil.virtual_memory().percent
-    os_info = f"{platform.system()} {platform.release()}"
-
-    bot_info = {
-        "uptime": uptime_str,
-        "cpu": cpu_percent,
-        "memory": mem_percent,
-        "os": os_info,
-        "ping": "32ms",
-        "servers": "42",
-        "users": "3,580"
-    }
-    return render_template("index.html", bot_info=bot_info)
+    return render_template("index.html")
 
 @app.route("/commands")
 def commands():
     return render_template("commands.html")
+
+@app.route("/api/stats")
+def api_stats():
+    try:
+        now = datetime.utcnow()
+        uptime_delta = now - bot_start_time
+        days, remainder = divmod(uptime_delta.total_seconds(), 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, _ = divmod(remainder, 60)
+        uptime_str = f"{int(days)}d {int(hours)}h {int(minutes)}m"
+
+        cpu_percent = psutil.cpu_percent(interval=0.5)
+        mem = psutil.virtual_memory()
+        os_info = f"{platform.system()} {platform.release()}"
+
+        try:
+            ping = f"{round(bot.latency * 1000)}ms"
+            servers = len(bot.guilds)
+            users = sum(g.member_count for g in bot.guilds)
+        except Exception:
+            ping = "N/A"
+            servers = "N/A"
+            users = "N/A"
+
+        return jsonify({
+            "uptime": uptime_str,
+            "cpu": cpu_percent,
+            "memory": mem.percent,
+            "ping": ping,
+            "servers": servers,
+            "users": users,
+            "os": os_info
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 def run_flask():
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
 
 threading.Thread(target=run_flask, daemon=True).start()
-
-import discord
-from discord.ext import commands
-from datetime import datetime, timezone  # timezone-aware datetime
 
 # ------------------- Discord Bot Setup -----------------------
 intents = discord.Intents.default()
