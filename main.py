@@ -83,7 +83,10 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="n/", intents=intents)
 bot.remove_command("help")  # disables the default help command
-bot_start_time = datetime.now(timezone.utc)  # ✅ use timezone-aware UTC datetime
+
+from datetime import datetime, timezone
+
+bot_start_time = datetime.now(timezone.utc)  # ✅ correct, timezone-aware
 
 # ------------------- Helper -----------------------
 def no_perm_msg(action):
