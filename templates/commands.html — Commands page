@@ -1,106 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 Commands</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #0e1117;
-            color: #e4e6eb;
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-        }
-        h1 {
-            color: #7289da;
-            margin-bottom: 30px;
-        }
-        .section {
-            background: #1c1f26;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 15px auto;
-            max-width: 800px;
-            text-align: left;
-        }
-        .section h2 {
-            color: #7289da;
-        }
-        a {
-            color: #7289da;
-            text-decoration: none;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 Commands</title>
+
+  <!-- Import Lexend Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Lexend', sans-serif;
+      background: #0b0b12;
+      color: #e3e3e3;
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(90deg, #5865f2, #7289da);
+      padding: 25px 10px;
+      text-align: center;
+      font-size: 2.3rem;
+      font-weight: 700;
+      color: white;
+      letter-spacing: 1px;
+      text-shadow: 0px 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .buttons {
+      text-align: center;
+      margin: 35px 0;
+    }
+
+    .buttons a {
+      display: inline-block;
+      background: #5865f2;
+      color: white;
+      padding: 12px 22px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin: 5px;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    .buttons a:hover {
+      background: #4752c4;
+      transform: translateY(-2px);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto 60px;
+      padding: 25px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
+    }
+
+    h2 {
+      color: #9ba3ff;
+      border-bottom: 2px solid #5865f2;
+      padding-bottom: 8px;
+      margin-top: 45px;
+      font-size: 1.5rem;
+      text-shadow: 0px 1px 6px rgba(0,0,0,0.3);
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    li {
+      margin: 10px 0;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+
+    li:hover {
+      background: rgba(88, 101, 242, 0.15);
+    }
+
+    strong {
+      color: #ffffff;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px;
+      font-size: 0.9rem;
+      color: #888;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+  </style>
 </head>
+
 <body>
-    <h1>𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 Commands</h1>
-    <a href="/">← Back to Dashboard</a>
+  <header>𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 Commands</header>
 
-    <div class="section">
-        <h2>⛊ Moderation</h2>
-        <p><b>n/kick @user &lt;reason&gt;</b> — Kick a member</p>
-        <p><b>n/ban @user &lt;reason&gt;</b> — Ban a member</p>
-        <p><b>n/unban &lt;user_id&gt;</b> — Unban a user</p>
-        <p><b>n/timeout @user &lt;minutes&gt; &lt;reason&gt;</b> — Timeout a member</p>
-        <p><b>n/removetimeout @user</b> — Remove a timeout</p>
-        <p><b>n/mute @user &lt;reason&gt;</b> — Mute a member</p>
-        <p><b>n/unmute @user</b> — Unmute a member</p>
-        <p><b>n/warn @user &lt;reason&gt;</b> — Warn a member</p>
-        <p><b>n/clear &lt;amount&gt;</b> — Clear messages</p>
-        <p><b>n/setupapp #channel &lt;title&gt; - &lt;questions&gt;</b> — Create an application form</p>
-        <p><b>n/openapp [@user]</b> — Apply for a role or membership</p>
-    </div>
+  <div class="buttons">
+    <a href="https://discord.com/oauth2/authorize?client_id=1210700638904656027&permissions=8&scope=bot%20applications.commands">Invite Bot</a>
+    <a href="/">Back Home</a>
+  </div>
 
-    <div class="section">
-        <h2>⚙︎ Channel</h2>
-        <p><b>n/slowmode &lt;seconds&gt;</b> — Set slowmode delay</p>
-        <p><b>n/lock</b> — Lock the current channel</p>
-        <p><b>n/unlock</b> — Unlock the channel</p>
-    </div>
+  <div class="container">
+    <h2>⛊ Moderation</h2>
+    <ul>
+      <li><strong>n/kick @user &lt;reason&gt;</strong> — Kick a member.</li>
+      <li><strong>n/ban @user &lt;reason&gt;</strong> — Ban a member.</li>
+      <li><strong>n/unban &lt;user_id&gt;</strong> — Unban a user.</li>
+      <li><strong>n/timeout @user &lt;minutes&gt; &lt;reason&gt;</strong> — Timeout a member.</li>
+      <li><strong>n/removetimeout @user</strong> — Remove a timeout.</li>
+      <li><strong>n/mute @user &lt;reason&gt;</strong> — Mute a member.</li>
+      <li><strong>n/unmute @user</strong> — Unmute a member.</li>
+      <li><strong>n/warn @user &lt;reason&gt;</strong> — Warn a member.</li>
+      <li><strong>n/snipe [0-5] [#channel]</strong> — Retrieve deleted messages.</li>
+      <li><strong>n/clear &lt;amount&gt;</strong> — Delete a number of messages.</li>
+      <li><strong>n/setupapp #channel &lt;title&gt; - &lt;questions&gt;</strong> — Setup a form sent to a channel.</li>
+      <li><strong>n/openapp [@user]</strong> — Apply for a role or membership.</li>
+    </ul>
 
-    <div class="section">
-        <h2>𐀪 Roles</h2>
-        <p><b>n/addrole @user @role</b> — Give a member a role</p>
-        <p><b>n/removerole @user @role</b> — Remove a member’s role</p>
-        <p><b>n/rolecatalog</b> — View all roles</p>
-    </div>
+    <h2>⚙︎ Channel</h2>
+    <ul>
+      <li><strong>n/slowmode &lt;seconds&gt;</strong> — Set channel slowmode delay.</li>
+      <li><strong>n/lock</strong> — Lock the channel.</li>
+      <li><strong>n/unlock</strong> — Unlock the channel.</li>
+    </ul>
 
-    <div class="section">
-        <h2>𝒊 Info</h2>
-        <p><b>n/userinfo @user</b> — Show user info</p>
-        <p><b>n/serverinfo</b> — Show server info</p>
-        <p><b>n/serverbanner</b> — Show the server banner</p>
-        <p><b>n/avatar @user</b> — View avatar</p>
-        <p><b>n/ping</b> — Show latency</p>
-        <p><b>n/time</b> — Current UTC time</p>
-        <p><b>n/invite</b> — Get bot invite link</p>
-    </div>
+    <h2>𐀪 Roles</h2>
+    <ul>
+      <li><strong>n/addrole @user @role</strong> — Give a member a role.</li>
+      <li><strong>n/removerole @user @role</strong> — Remove a role from a member.</li>
+      <li><strong>n/rolecatalog</strong> — View all roles (limit: 20).</li>
+    </ul>
 
-    <div class="section">
-        <h2>☻ Fun & Games</h2>
-        <p><b>n/hug @user</b> — Hug someone</p>
-        <p><b>n/hugall</b> — Hug everyone</p>
-        <p><b>n/kiss @user</b> — Kiss someone</p>
-        <p><b>n/flipcoin</b> — Flip a coin</p>
-        <p><b>n/roll &lt;sides&gt;</b> — Roll a dice</p>
-        <p><b>n/8ball &lt;question&gt;</b> — Magic 8-ball</p>
-        <p><b>n/meme</b> — Random meme</p>
-        <p><b>n/rps &lt;rock/paper/scissors&gt;</b> — Rock Paper Scissors</p>
-        <p><b>n/tictactoe @opponent</b> — Start Tic Tac Toe</p>
-        <p><b>n/connect4 @opponent</b> — Play Connect 4</p>
-        <p><b>n/rpg</b> — Text RPG adventure</p>
-        <p><b>n/spellduel @opponent</b> — Spell duel</p>
-        <p><b>n/wordchain &lt;word&gt;</b> — Start a word chain</p>
-    </div>
+    <h2>𝒊 Info</h2>
+    <ul>
+      <li><strong>n/userinfo @user</strong> — View info about a user.</li>
+      <li><strong>n/serverinfo</strong> — View server info.</li>
+      <li><strong>n/serverbanner</strong> — Show the server banner.</li>
+      <li><strong>n/avatar @user</strong> — View a user’s avatar.</li>
+      <li><strong>n/ping</strong> — Check bot latency.</li>
+      <li><strong>n/time</strong> — Display current UTC time.</li>
+      <li><strong>n/status</strong> — Show bot and web status.</li>
+      <li><strong>n/invite</strong> — Get the bot’s invite link.</li>
+    </ul>
 
-    <div class="section">
-        <h2>⚡︎ Utility</h2>
-        <p><b>n/say &lt;message&gt;</b> — Repeat message</p>
-        <p><b>n/poll "question" &lt;option1&gt; &lt;option2&gt; [time]</b> — Create a poll</p>
-        <p><b>n/announce &lt;message&gt;</b> — Make announcement</p>
-        <p><b>n/ask &lt;question&gt;</b> — Ask OpenAI</p>
-        <p><b>n/define &lt;word&gt;</b> — Get word definition</p>
-    </div>
+    <h2>☻ Fun & Games</h2>
+    <ul>
+      <li><strong>n/hug @user</strong> — Hug someone.</li>
+      <li><strong>n/hugall</strong> — Hug everyone.</li>
+      <li><strong>n/kiss @user</strong> — Kiss someone.</li>
+      <li><strong>n/flipcoin</strong> — Flip a coin.</li>
+      <li><strong>n/roll &lt;sides&gt;</strong> — Roll dice.</li>
+      <li><strong>n/8ball &lt;question&gt;</strong> — Ask the magic 8-ball.</li>
+      <li><strong>n/meme</strong> — Get a random meme.</li>
+      <li><strong>n/rps &lt;rock/paper/scissors&gt;</strong> — Play RPS.</li>
+      <li><strong>n/tictactoe @opponent</strong> — Start Tic Tac Toe.</li>
+      <li><strong>n/connect4 @opponent</strong> — Start Connect 4.</li>
+      <li><strong>n/rpg</strong> — Start an RPG game.</li>
+      <li><strong>n/spellduel @opponent</strong> — Spell duel.</li>
+      <li><strong>n/rapbattle @opponent</strong> — Rap battle.</li>
+      <li><strong>n/wordchain &lt;word&gt;</strong> — Start a word chain.</li>
+      <li><strong>n/endwordchain</strong> — End word chain.</li>
+    </ul>
+
+    <h2>⚡︎ Utility</h2>
+    <ul>
+      <li><strong>n/say &lt;message&gt;</strong> — Repeat your message.</li>
+      <li><strong>n/poll "question" &lt;option1&gt; &lt;option2&gt; [0d 0h]</strong> — Start a poll.</li>
+      <li><strong>n/announce &lt;message&gt;</strong> — Make an announcement.</li>
+      <li><strong>n/ask &lt;question&gt;</strong> — Ask OpenAI.</li>
+      <li><strong>n/define &lt;word&gt;</strong> — Look up word meanings.</li>
+    </ul>
+  </div>
+
+  <footer>Made by <strong>@captainn29</strong> • Powered by Nexus</footer>
 </body>
 </html>
+
