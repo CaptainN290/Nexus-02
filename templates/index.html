@@ -1,103 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭</title>
-<style>
-body {
-  font-family: "Poppins", sans-serif;
-  background: radial-gradient(circle at top, #18181b 0%, #0e0e10 100%);
-  color: white;
-  text-align: center;
-  margin: 0;
-  padding: 60px 20px;
-}
-h1 {
-  font-size: 3em;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-p.subtitle {
-  font-size: 1.2em;
-  color: #aaa;
-  margin-bottom: 40px;
-}
-.stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 20px;
-  max-width: 700px;
-  margin: 0 auto 40px;
-}
-.stat-card {
-  background: #1e1e22;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.4);
-}
-.stat-card h3 {
-  color: #5865f2;
-  font-size: 1.3em;
-  margin: 0;
-}
-.stat-card p {
-  font-size: 1.1em;
-  margin-top: 8px;
-}
-button {
-  background: #5865f2;
-  color: white;
-  border: none;
-  padding: 12px 28px;
-  font-size: 16px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-button:hover { background: #4752c4; }
-footer {
-  margin-top: 60px;
-  color: #777;
-  font-size: 0.9em;
-}
-</style>
+    <meta charset="UTF-8">
+    <title>𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0e1117;
+            color: #e4e6eb;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-top: 30px;
+            color: #7289da;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 800px;
+            margin: 40px auto;
+        }
+        .card {
+            background: #1c1f26;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 10px #0003;
+        }
+        button {
+            background: #7289da;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #5b6ea5;
+        }
+        .footer {
+            margin-top: 40px;
+            color: #aaa;
+        }
+    </style>
 </head>
 <body>
-<h1>𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭</h1>
-<p class="subtitle">Your intelligent, multifunctional Discord assistant.</p>
+    <h1>𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 Dashboard</h1>
+    <div class="stats" id="stats"></div>
 
-<div class="stats">
-  <div class="stat-card">
-    <h3>⏱ Uptime</h3>
-    <p>{{ bot_info.uptime }}</p>
-  </div>
-  <div class="stat-card">
-    <h3>📡 Ping</h3>
-    <p>{{ bot_info.ping }}</p>
-  </div>
-  <div class="stat-card">
-    <h3>🖥 CPU Usage</h3>
-    <p>{{ bot_info.cpu }}%</p>
-  </div>
-  <div class="stat-card">
-    <h3>💾 Memory Usage</h3>
-    <p>{{ bot_info.memory }}%</p>
-  </div>
-  <div class="stat-card">
-    <h3>🌐 Servers</h3>
-    <p>{{ bot_info.servers }}</p>
-  </div>
-  <div class="stat-card">
-    <h3>👥 Users</h3>
-    <p>{{ bot_info.users }}</p>
-  </div>
-</div>
+    <div>
+        <button onclick="window.location.href='/commands'">View Commands</button>
+        <button onclick="window.open('https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=8&scope=bot%20applications.commands', '_blank')">Invite Bot</button>
+    </div>
 
-<a href="/commands"><button>View Commands</button></a>
+    <div class="footer">Made by @CaptainN29</div>
 
-<footer>
-<p>© 2025 Nexus Bot • Built by CaptainN29</p>
-</footer>
+    <script>
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                const stats = document.getElementById('stats');
+                stats.innerHTML = `
+                    <div class="card"><h3>Ping</h3><p>${data.ping}</p></div>
+                    <div class="card"><h3>Uptime</h3><p>${data.uptime}</p></div>
+                    <div class="card"><h3>Servers</h3><p>${data.servers}</p></div>
+                    <div class="card"><h3>Users</h3><p>${data.users}</p></div>
+                    <div class="card"><h3>CPU Usage</h3><p>${data.cpu}%</p></div>
+                    <div class="card"><h3>Memory Usage</h3><p>${data.memory}%</p></div>
+                    <div class="card"><h3>OS</h3><p>${data.os}</p></div>
+                `;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        loadStats();
+        setInterval(loadStats, 5000); // refresh every 5s
+    </script>
 </body>
 </html>
