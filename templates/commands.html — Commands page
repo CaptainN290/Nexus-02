@@ -1,128 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexus Bot Commands</title>
-<style>
-body {
-  font-family: "Poppins", sans-serif;
-  background: #0e0e10;
-  color: white;
-  padding: 40px 20px;
-  line-height: 1.6;
-}
-h1 {
-  color: #5865f2;
-  text-align: center;
-  margin-bottom: 20px;
-}
-section {
-  max-width: 800px;
-  margin: 0 auto 40px;
-}
-h2 {
-  color: #7a7aff;
-  border-bottom: 1px solid #333;
-  padding-bottom: 5px;
-}
-a {
-  color: #5865f2;
-  text-decoration: none;
-}
-a:hover { text-decoration: underline; }
-.back {
-  display: block;
-  text-align: center;
-  margin-bottom: 30px;
-}
-</style>
+    <meta charset="UTF-8">
+    <title>𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 Commands</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0e1117;
+            color: #e4e6eb;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #7289da;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: #1c1f26;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px auto;
+            max-width: 800px;
+            text-align: left;
+        }
+        .section h2 {
+            color: #7289da;
+        }
+        a {
+            color: #7289da;
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
-<a href="/" class="back">← Back to Home</a>
-<h1>⚡ Nexus Bot Commands</h1>
+    <h1>𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 Commands</h1>
+    <a href="/">← Back to Dashboard</a>
 
-<section>
-<h2>⛊ Moderation</h2>
-<p>
-**n/kick @user <reason>** – Kick a member<br>
-**n/ban @user <reason>** – Ban a member<br>
-**n/unban <user_id>** – Unban a user<br>
-**n/timeout @user <minutes> <reason>** – Timeout a member<br>
-**n/removetimeout @user** – Remove a timeout<br>
-**n/mute @user <reason>** – Mute a member<br>
-**n/unmute @user** – Unmute a member<br>
-**n/warn @user <reason>** – Warn a member<br>
-**n/snipe [0-5] [#channel]** – Retrieve deleted messages<br>
-**n/clear <amount> [ex:] [images/@user]** – Delete messages<br>
-**n/setupapp #channel <title> - <question> | <question>** – Create an application form that sends responses to a specific channel<br>
-**n/openapp [@user]** – Apply for a role or membership
-</p>
-</section>
+    <div class="section">
+        <h2>⛊ Moderation</h2>
+        <p><b>n/kick @user &lt;reason&gt;</b> — Kick a member</p>
+        <p><b>n/ban @user &lt;reason&gt;</b> — Ban a member</p>
+        <p><b>n/unban &lt;user_id&gt;</b> — Unban a user</p>
+        <p><b>n/timeout @user &lt;minutes&gt; &lt;reason&gt;</b> — Timeout a member</p>
+        <p><b>n/removetimeout @user</b> — Remove a timeout</p>
+        <p><b>n/mute @user &lt;reason&gt;</b> — Mute a member</p>
+        <p><b>n/unmute @user</b> — Unmute a member</p>
+        <p><b>n/warn @user &lt;reason&gt;</b> — Warn a member</p>
+        <p><b>n/clear &lt;amount&gt;</b> — Clear messages</p>
+        <p><b>n/setupapp #channel &lt;title&gt; - &lt;questions&gt;</b> — Create an application form</p>
+        <p><b>n/openapp [@user]</b> — Apply for a role or membership</p>
+    </div>
 
-<section>
-<h2>⚙︎ Channel</h2>
-<p>
-**n/slowmode <seconds>** – Set slowmode delay<br>
-**n/lock** – Lock current channel<br>
-**n/unlock** – Unlock current channel
-</p>
-</section>
+    <div class="section">
+        <h2>⚙︎ Channel</h2>
+        <p><b>n/slowmode &lt;seconds&gt;</b> — Set slowmode delay</p>
+        <p><b>n/lock</b> — Lock the current channel</p>
+        <p><b>n/unlock</b> — Unlock the channel</p>
+    </div>
 
-<section>
-<h2>𐀪 Roles</h2>
-<p>
-**n/addrole @user @role** – Give a role<br>
-**n/removerole @user @role** – Remove a role<br>
-**n/rolecatalog** – View all roles
-</p>
-</section>
+    <div class="section">
+        <h2>𐀪 Roles</h2>
+        <p><b>n/addrole @user @role</b> — Give a member a role</p>
+        <p><b>n/removerole @user @role</b> — Remove a member’s role</p>
+        <p><b>n/rolecatalog</b> — View all roles</p>
+    </div>
 
-<section>
-<h2>𝒊 Info</h2>
-<p>
-**n/userinfo @user** – Info about a user<br>
-**n/serverinfo** – Info about the server<br>
-**n/serverbanner** – Display server banner<br>
-**n/avatar @user** – Member avatar<br>
-**n/ping** – Show latency<br>
-**n/time** – Show current UTC time<br>
-**n/invite** – Get bot invite link
-</p>
-</section>
+    <div class="section">
+        <h2>𝒊 Info</h2>
+        <p><b>n/userinfo @user</b> — Show user info</p>
+        <p><b>n/serverinfo</b> — Show server info</p>
+        <p><b>n/serverbanner</b> — Show the server banner</p>
+        <p><b>n/avatar @user</b> — View avatar</p>
+        <p><b>n/ping</b> — Show latency</p>
+        <p><b>n/time</b> — Current UTC time</p>
+        <p><b>n/invite</b> — Get bot invite link</p>
+    </div>
 
-<section>
-<h2>⚡︎ Utility</h2>
-<p>
-**n/say <message>** – Repeat a message<br>
-**n/poll "question" <option1> <option2> [0d 0h]** – Start a poll<br>
-**n/announce <message>** – Make an announcement<br>
-**n/ask <question>** – Ask OpenAI<br>
-**n/define <word>** – Look up a definition
-</p>
-</section>
+    <div class="section">
+        <h2>☻ Fun & Games</h2>
+        <p><b>n/hug @user</b> — Hug someone</p>
+        <p><b>n/hugall</b> — Hug everyone</p>
+        <p><b>n/kiss @user</b> — Kiss someone</p>
+        <p><b>n/flipcoin</b> — Flip a coin</p>
+        <p><b>n/roll &lt;sides&gt;</b> — Roll a dice</p>
+        <p><b>n/8ball &lt;question&gt;</b> — Magic 8-ball</p>
+        <p><b>n/meme</b> — Random meme</p>
+        <p><b>n/rps &lt;rock/paper/scissors&gt;</b> — Rock Paper Scissors</p>
+        <p><b>n/tictactoe @opponent</b> — Start Tic Tac Toe</p>
+        <p><b>n/connect4 @opponent</b> — Play Connect 4</p>
+        <p><b>n/rpg</b> — Text RPG adventure</p>
+        <p><b>n/spellduel @opponent</b> — Spell duel</p>
+        <p><b>n/wordchain &lt;word&gt;</b> — Start a word chain</p>
+    </div>
 
-<section>
-<h2>☻ Fun & Games</h2>
-<p>
-**n/hug @user** – Hug someone<br>
-**n/hugall** – Hug everyone<br>
-**n/kiss @user** – Kiss someone<br>
-**n/flipcoin** – Flip a coin<br>
-**n/roll <sides>** – Roll dice<br>
-**n/8ball <question>** – Magic 8ball<br>
-**n/meme** – Get a meme<br>
-**n/rps <rock/paper/scissors>** – Play Rock Paper Scissors<br>
-**n/tictactoe @opponent** – Start Tic Tac Toe<br>
-**n/tttmove <1-9>** – Choose a position<br>
-**n/connect4 @opponent** – Start Connect 4<br>
-**n/c4move <1-7>** – Pick a column<br>
-**n/rpg** – Text RPG<br>
-**n/spellduel @opponent** – Spell duel<br>
-**n/rapbattle @opponent** – Rap battle<br>
-**n/wordchain <word>** – Start word chain<br>
-**n/endwordchain** – End word chain
-</p>
-</section>
+    <div class="section">
+        <h2>⚡︎ Utility</h2>
+        <p><b>n/say &lt;message&gt;</b> — Repeat message</p>
+        <p><b>n/poll "question" &lt;option1&gt; &lt;option2&gt; [time]</b> — Create a poll</p>
+        <p><b>n/announce &lt;message&gt;</b> — Make announcement</p>
+        <p><b>n/ask &lt;question&gt;</b> — Ask OpenAI</p>
+        <p><b>n/define &lt;word&gt;</b> — Get word definition</p>
+    </div>
 </body>
 </html>
