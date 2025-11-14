@@ -10,7 +10,7 @@
 <body>
 
 <nav class="navbar">
-    <h1 class="logo glow-gold">NEXUS BOT</h1>
+    <h1 class="logo glow-gold">𝐍𝐄𝐗𝐔𝐒 𝐁𝐎𝐓</h1>
     <ul>
         <li><a href="/">Home</a></li>
         <li><a href="/commands">Commands</a></li>
@@ -18,39 +18,45 @@
     </ul>
 </nav>
 
+<div class="container">
+
     <h2 class="glow-gold big-title">Dashboard</h2>
 
-    <div id="dashboard-stats" class="dashboard-card">
-        <h3 class="glow-gold">Live Bot Stats</h3>
+    <!-- BOT STATS -->
+    <div id="dashboard-stats" class="dashboard-card glass">
         <p>Loading bot statistics...</p>
     </div>
 
-    <div class="dashboard-card">
-        <h3 class="glow-gold">Select a Server</h3>
-        <select id="guild-select" class="guild-dropdown">
-            <option>Loading servers...</option>
-        </select>
+    <!-- GUILD SELECTOR -->
+    <div class="dashboard-card glass">
+        <h3 class="gold-animate">Select a Server</h3>
+        <select id="guild-select" class="guild-dropdown"></select>
     </div>
 
-    <div id="guild-info-box" class="dashboard-card">
-        <h3 class="glow-gold">Server Details</h3>
-        <p>Select a server to view info.</p>
+    <!-- GUILD INFO -->
+    <div id="guild-info-box" class="dashboard-card glass">
+        <p class="gold-animate">Select a server to view details.</p>
     </div>
 
-    <!-- Logs & Messages -->
-    <div class="dashboard-row">
-      <div id="logs-box" class="dashboard-card half"></div>
-      <div id="messages-box" class="dashboard-card half"></div>
+    <!-- MEMBERS -->
+    <div id="guild-members-box" class="dashboard-card glass">
+        <h3 class="gold-animate">Members</h3>
+        <p>Loading...</p>
     </div>
 
-    <!-- Members & Roles -->
-    <div class="dashboard-row">
-      <div id="members-box" class="dashboard-card half"></div>
-      <div id="roles-box" class="dashboard-card half"></div>
+    <!-- ROLES -->
+    <div id="guild-role-box" class="dashboard-card glass">
+        <h3 class="gold-animate">Role Manager</h3>
+        <p>Select a member to manage roles.</p>
+
+        <select id="role-member-select"></select>
+        <div id="role-list"></div>
     </div>
 
-    <div id="control-panel" class="dashboard-card">
-        <h3 class="glow-gold">Bot Controls</h3>
+    <!-- CONTROL PANEL -->
+    <div id="control-panel" class="dashboard-card glass">
+        <h3 class="gold-animate">Bot Controls</h3>
+
         <button class="dash-btn" onclick="sendBotCommand('restart')">Restart Bot</button>
         <button class="dash-btn" onclick="sendBotCommand('sync')">Sync Commands</button>
         <button class="dash-btn" onclick="sendBotCommand('status')">Refresh Status</button>
