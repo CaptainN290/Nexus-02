@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <title>Nexus Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
-    <script src="/static/script.js" defer></script>
+    <script src="/static/dashboard.js" defer></script>
 </head>
+
 <body>
 
 <nav class="navbar">
-    <h1 class="logo glow-gold">NEXUS BOT</h1>
+    <h1 class="logo gold-animate">NEXUS BOT</h1>
     <ul>
         <li><a href="/">Home</a></li>
         <li><a href="/commands">Commands</a></li>
@@ -18,11 +19,31 @@
 </nav>
 
 <div class="container">
-    <h2 class="glow-gold big-title">Dashboard</h2>
 
+    <h2 class="gold-animate big-title">Dashboard</h2>
+
+    <!-- BOT STATS -->
     <div id="dashboard-stats" class="dashboard-card">
-        <p>Loading stats...</p>
+        <p>Loading bot statistics...</p>
     </div>
+
+    <!-- GUILD SELECTOR -->
+    <div class="dashboard-card">
+        <h3 class="gold-animate">Select a Server</h3>
+        <select id="guild-select" class="guild-dropdown">
+            <option>Loading servers...</option>
+        </select>
+    </div>
+
+    <!-- CONTROL PANEL -->
+    <div id="control-panel" class="dashboard-card">
+        <h3 class="gold-animate">Bot Controls</h3>
+
+        <button class="dash-btn" onclick="sendBotCommand('restart')">Restart Bot</button>
+        <button class="dash-btn" onclick="sendBotCommand('sync')">Sync Commands</button>
+        <button class="dash-btn" onclick="sendBotCommand('status')">Refresh Status</button>
+    </div>
+
 </div>
 
 </body>
