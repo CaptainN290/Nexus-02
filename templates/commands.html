@@ -5,27 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 Commands</title>
 
-  <!-- Import Lexend Font -->
+  <!-- Lexend Font -->
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700&display=swap" rel="stylesheet">
 
   <style>
     body {
       margin: 0;
       font-family: 'Lexend', sans-serif;
-      background: #0b0b12;
-      color: #e3e3e3;
+      background: #000000;
+      color: #f5d97c; /* gold */
       line-height: 1.6;
     }
 
     header {
-      background: linear-gradient(90deg, #5865f2, #7289da);
+      background: linear-gradient(90deg, #b8860b, #ffd700);
       padding: 25px 10px;
       text-align: center;
       font-size: 2.3rem;
       font-weight: 700;
-      color: white;
+      color: #000;
       letter-spacing: 1px;
-      text-shadow: 0px 2px 8px rgba(0,0,0,0.4);
+      text-shadow: 0px 2px 10px rgba(255, 215, 0, 0.5);
     }
 
     .buttons {
@@ -35,38 +35,40 @@
 
     .buttons a {
       display: inline-block;
-      background: #5865f2;
-      color: white;
+      background: #b8860b;
+      color: black;
       padding: 12px 22px;
       border-radius: 10px;
       text-decoration: none;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.5px;
       margin: 5px;
-      transition: background 0.3s, transform 0.2s;
+      transition: 0.3s;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
     }
 
     .buttons a:hover {
-      background: #4752c4;
+      background: #ffd700;
       transform: translateY(-2px);
+      box-shadow: 0 0 18px rgba(255, 215, 0, 0.7);
     }
 
     .container {
       max-width: 900px;
       margin: 0 auto 60px;
       padding: 25px;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 215, 0, 0.05);
       border-radius: 16px;
-      box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 0 25px rgba(255, 215, 0, 0.25);
     }
 
     h2 {
-      color: #9ba3ff;
-      border-bottom: 2px solid #5865f2;
+      color: #ffd700;
+      border-bottom: 2px solid #b8860b;
       padding-bottom: 8px;
       margin-top: 45px;
       font-size: 1.5rem;
-      text-shadow: 0px 1px 6px rgba(0,0,0,0.3);
+      text-shadow: 0px 1px 10px rgba(255, 215, 0, 0.6);
     }
 
     ul {
@@ -77,25 +79,28 @@
     li {
       margin: 10px 0;
       padding: 12px 14px;
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(255, 215, 0, 0.08);
       border-radius: 8px;
-      transition: background 0.3s;
+      transition: background 0.3s, transform 0.2s;
+      border: 1px solid rgba(255, 215, 0, 0.15);
     }
 
     li:hover {
-      background: rgba(88, 101, 242, 0.15);
+      background: rgba(255, 215, 0, 0.20);
+      transform: translateX(4px);
     }
 
     strong {
-      color: #ffffff;
+      color: #ffe28a;
+      font-weight: 700;
     }
 
     footer {
       text-align: center;
       padding: 25px;
       font-size: 0.9rem;
-      color: #888;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      color: #e6c46b;
+      border-top: 1px solid rgba(255, 215, 0, 0.1);
     }
   </style>
 </head>
@@ -104,7 +109,7 @@
   <header>𝐍𝐞𝐱𝐮𝐬 𝐁𝐨𝐭 Commands</header>
 
   <div class="buttons">
-    <a href="https://discord.com/oauth2/authorize?client_id=1210700638904656027&permissions=8&scope=bot%20applications.commands">Invite Bot</a>
+    <a href="https://discord.com/oauth2/authorize?client_id=1432139270860177581&permissions=8&scope=bot%20applications.commands">Invite Bot</a>
     <a href="/">Back Home</a>
   </div>
 
@@ -115,72 +120,61 @@
       <li><strong>n/ban @user &lt;reason&gt;</strong> — Ban a member.</li>
       <li><strong>n/unban &lt;user_id&gt;</strong> — Unban a user.</li>
       <li><strong>n/timeout @user &lt;minutes&gt; &lt;reason&gt;</strong> — Timeout a member.</li>
-      <li><strong>n/removetimeout @user</strong> — Remove a timeout.</li>
+      <li><strong>n/removetimeout @user</strong> — Remove timeout.</li>
       <li><strong>n/mute @user &lt;reason&gt;</strong> — Mute a member.</li>
-      <li><strong>n/unmute @user</strong> — Unmute a member.</li>
-      <li><strong>n/warn @user &lt;reason&gt;</strong> — Warn a member.</li>
-      <li><strong>n/snipe [0-5] [#channel]</strong> — Retrieve deleted messages.</li>
-      <li><strong>n/clear &lt;amount&gt;</strong> — Delete a number of messages.</li>
-      <li><strong>n/setupapp #channel &lt;title&gt; - &lt;questions&gt;</strong> — Setup a form sent to a channel.</li>
-      <li><strong>n/openapp [@user]</strong> — Apply for a role or membership.</li>
+      <li><strong>n/unmute @user</strong> — Unmute.</li>
+      <li><strong>n/warn @user &lt;reason&gt;</strong> — Warn.</li>
+      <li><strong>n/snipe [0-5] [#channel]</strong> — Retrieve deleted msg.</li>
+      <li><strong>n/clear &lt;amount&gt;</strong> — Clear messages.</li>
     </ul>
 
     <h2>⚙︎ Channel</h2>
     <ul>
-      <li><strong>n/slowmode &lt;seconds&gt;</strong> — Set channel slowmode delay.</li>
-      <li><strong>n/lock</strong> — Lock the channel.</li>
-      <li><strong>n/unlock</strong> — Unlock the channel.</li>
+      <li><strong>n/slowmode &lt;seconds&gt;</strong> — Slowmode.</li>
+      <li><strong>n/lock</strong> — Lock channel.</li>
+      <li><strong>n/unlock</strong> — Unlock.</li>
     </ul>
 
     <h2>𐀪 Roles</h2>
     <ul>
-      <li><strong>n/addrole @user @role</strong> — Give a member a role.</li>
-      <li><strong>n/removerole @user @role</strong> — Remove a role from a member.</li>
-      <li><strong>n/rolecatalog</strong> — View all roles (limit: 20).</li>
+      <li><strong>n/addrole @user @role</strong> — Add role.</li>
+      <li><strong>n/removerole @user @role</strong> — Remove role.</li>
+      <li><strong>n/rolecatalog</strong> — View roles.</li>
     </ul>
 
     <h2>𝒊 Info</h2>
     <ul>
-      <li><strong>n/userinfo @user</strong> — View info about a user.</li>
-      <li><strong>n/serverinfo</strong> — View server info.</li>
-      <li><strong>n/serverbanner</strong> — Show the server banner.</li>
-      <li><strong>n/avatar @user</strong> — View a user’s avatar.</li>
-      <li><strong>n/ping</strong> — Check bot latency.</li>
-      <li><strong>n/time</strong> — Display current UTC time.</li>
-      <li><strong>n/status</strong> — Show bot and web status.</li>
-      <li><strong>n/invite</strong> — Get the bot’s invite link.</li>
+      <li><strong>n/userinfo @user</strong> — User info.</li>
+      <li><strong>n/serverinfo</strong> — Server info.</li>
+      <li><strong>n/serverbanner</strong> — Show banner.</li>
+      <li><strong>n/avatar @user</strong> — Avatar.</li>
+      <li><strong>n/ping</strong> — Ping.</li>
+      <li><strong>n/time</strong> — UTC time.</li>
+      <li><strong>n/status</strong> — Bot status.</li>
+      <li><strong>n/invite</strong> — Invite link.</li>
     </ul>
 
     <h2>☻ Fun & Games</h2>
     <ul>
-      <li><strong>n/hug @user</strong> — Hug someone.</li>
-      <li><strong>n/hugall</strong> — Hug everyone.</li>
-      <li><strong>n/kiss @user</strong> — Kiss someone.</li>
-      <li><strong>n/flipcoin</strong> — Flip a coin.</li>
-      <li><strong>n/roll &lt;sides&gt;</strong> — Roll dice.</li>
-      <li><strong>n/8ball &lt;question&gt;</strong> — Ask the magic 8-ball.</li>
-      <li><strong>n/meme</strong> — Get a random meme.</li>
-      <li><strong>n/rps &lt;rock/paper/scissors&gt;</strong> — Play RPS.</li>
-      <li><strong>n/tictactoe @opponent</strong> — Start Tic Tac Toe.</li>
-      <li><strong>n/connect4 @opponent</strong> — Start Connect 4.</li>
-      <li><strong>n/rpg</strong> — Start an RPG game.</li>
-      <li><strong>n/spellduel @opponent</strong> — Spell duel.</li>
-      <li><strong>n/rapbattle @opponent</strong> — Rap battle.</li>
-      <li><strong>n/wordchain &lt;word&gt;</strong> — Start a word chain.</li>
-      <li><strong>n/endwordchain</strong> — End word chain.</li>
+      <li><strong>n/hug @user</strong> — Hug.</li>
+      <li><strong>n/hugall</strong> — Hug all.</li>
+      <li><strong>n/kiss @user</strong> — Kiss.</li>
+      <li><strong>n/flipcoin</strong> — Coin flip.</li>
+      <li><strong>n/roll</strong> — Dice roll.</li>
+      <li><strong>n/meme</strong> — Meme.</li>
+      <li><strong>n/rps</strong> — Rock Paper Scissors.</li>
     </ul>
 
     <h2>⚡︎ Utility</h2>
     <ul>
-      <li><strong>n/say &lt;message&gt;</strong> — Repeat your message.</li>
-      <li><strong>n/poll "question" &lt;option1&gt; &lt;option2&gt; [0d 0h]</strong> — Start a poll.</li>
-      <li><strong>n/announce &lt;message&gt;</strong> — Make an announcement.</li>
-      <li><strong>n/ask &lt;question&gt;</strong> — Ask OpenAI.</li>
-      <li><strong>n/define &lt;word&gt;</strong> — Look up word meanings.</li>
+      <li><strong>n/say</strong> — Repeat message.</li>
+      <li><strong>n/poll</strong> — Poll.</li>
+      <li><strong>n/announce</strong> — Announcement.</li>
+      <li><strong>n/ask</strong> — Ask AI.</li>
+      <li><strong>n/define</strong> — Dictionary.</li>
     </ul>
   </div>
 
   <footer>Made by <strong>@captainn29</strong> • Powered by Nexus</footer>
 </body>
 </html>
-
