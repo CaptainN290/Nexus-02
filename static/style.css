@@ -121,3 +121,25 @@ body {
 .muted { color: rgba(255,255,255,0.35); font-size:0.9em; }
 #member-search { width:100%; padding:8px; margin-bottom:8px; border-radius:6px; background: rgba(0,0,0,0.2); color:#ffd84d; border:1px solid rgba(255,200,0,0.08); }
 .guild-dropdown { width:100%; padding:8px; border-radius:6px; background: rgba(0,0,0,0.2); color:#ffd84d; border:1px solid rgba(255,200,0,0.08); }
+
+.big-title {
+    font-size: 48px;
+    text-align: center;
+}
+
+.container p, .container div {
+    font-size: 20px;
+}
+
+.glow-gold {
+    color: #f1c40f;
+    text-shadow: 0 0 10px #f1c40f, 0 0 20px #ffaa00;
+}
+
+.dashboard-card.glass {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 12px;
+}
