@@ -74,6 +74,65 @@ def api_stats():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+# ------------------- Dashboard API Routes -------------------
+
+@app.route("/api/guilds")
+def api_guilds():
+    """Return a list of guilds the bot is in."""
+    try:
+        guild_list = [{"id": g.id, "name": g.name} for g in bot.guilds]
+        return jsonify({"guilds": guild_list})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/guild/<int:guild_id>/info")
+def api_guild_info(guild_id):
+    """Return information for a single guild."""
+    try:
+        guild = bot.get_guild(guild_id)
+        if guild is None:
+            return jsonify({"error": "Guild not found"}), 404
+
+        info = {
+            "id": guild.id,
+            "name": guild.name,
+            "member_count": guild.member_count,
+            "owner": str(guild.owner),
+            "roles": [role.name for role in guild.roles],
+            "channels": [ch.name for ch in guild.channels]
+        }
+
+        return jsonify(info)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/control/<action>", methods=["POST"])
+def api_control(action):
+    """Dashboard bot controls."""
+    if action == "restart":
+        try:
+            os._exit(0)
+        except:
+            return jsonify({"status": "Failed to restart"}), 500
+
+    elif action == "sync":
+        try:
+            asyncio.run(bot.tree.sync())
+            return jsonify({"status": "Commands synced"})
+        except Exception as e:
+            return jsonify({"status": "Sync failed", "error": str(e)}), 500
+
+    elif action == "status":
+        try:
+            return jsonify({"status": "Bot running"})
+        except:
+            return jsonify({"status": "Bot not responding"}), 500
+
+    else:
+        return jsonify({"error": "Invalid action"}), 400
+
 def run_flask():
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
