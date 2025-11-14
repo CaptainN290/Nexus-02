@@ -1,45 +1,21 @@
-/* GLOBAL */
+/* ================= GLOBAL ================= */
 body {
     margin: 0;
-    padding: 0;
-    background: #000;
-    color: #f5d76e;
-    font-family: Arial, sans-serif;
+    background: #000000;
+    color: #d4af37;
+    font-family: 'Lexend', sans-serif;
 }
 
-.container {
-    width: 90%;
-    margin: auto;
-    padding-top: 40px;
-    text-align: center;
-}
-
-.big-title {
-    font-size: 40px;
-    margin-bottom: 25px;
-}
-
-/* GOLD GLOW EFFECT */
-.glow-gold {
-    color: #ffd700;
-    text-shadow: 0 0 10px #ffd700, 0 0 20px #ffaa00, 0 0 40px #ff8800;
-    animation: glowPulse 2s ease-in-out infinite;
-}
-
-@keyframes glowPulse {
-    0% { text-shadow: 0 0 10px #ffd700; }
-    50% { text-shadow: 0 0 25px #ffae00; }
-    100% { text-shadow: 0 0 10px #ffd700; }
-}
-
-/* NAVBAR */
+/* ================= NAVBAR ================= */
 .navbar {
     width: 100%;
-    background: #111;
-    padding: 15px 20px;
+    background: #000;
+    padding: 18px 25px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 0 20px rgba(212,175,55,0.2);
 }
 
 .navbar ul {
@@ -49,38 +25,61 @@ body {
 }
 
 .navbar a {
-    color: #ffd700;
+    color: #d4af37;
     text-decoration: none;
-    font-weight: bold;
-    transition: 0.3s;
+    font-weight: 600;
+    transition: 0.25s;
 }
 
 .navbar a:hover {
-    color: white;
+    color: #ffe08f;
+    text-shadow: 0 0 10px rgba(212,175,55,1);
 }
 
-/* STATUS BOX */
-.status-box,
-.dashboard-card {
-    background: #111;
-    border: 2px solid #ffd700;
+.logo {
+    font-size: 1.8rem;
+    font-weight: 800;
+}
+
+.glow-gold {
+    text-shadow: 0 0 10px #d4af37, 0 0 22px rgba(212,175,55,0.5);
+}
+
+/* ================= CONTAINER ================= */
+.container {
+    max-width: 900px;
+    margin: 40px auto;
     padding: 20px;
-    width: 300px;
+    text-align: center;
+}
+
+.big-title {
+    font-size: 2.4rem;
+    margin-bottom: 30px;
+}
+
+/* ================= DASHBOARD CARD ================= */
+.dashboard-card {
+    background: rgba(255, 215, 0, 0.07);
+    border: 1px solid rgba(212,175,55,0.25);
+    border-radius: 15px;
+    padding: 25px;
     margin: 20px auto;
-    border-radius: 8px;
-    box-shadow: 0 0 20px #ffb400;
+    width: 90%;
+    box-shadow: 0 0 25px rgba(212,175,55,0.18);
+    transition: 0.3s;
 }
 
-.commands-section {
-    text-align: left;
-    margin-top: 30px;
+.dashboard-card:hover {
+    box-shadow: 0 0 40px rgba(212,175,55,0.35);
+    transform: scale(1.02);
 }
 
-pre {
-    background: #111;
-    padding: 10px;
-    border: 1px solid #ffd700;
-    border-radius: 5px;
-    color: #f9e08b;
-    overflow-x: auto;
+p {
+    font-size: 1.2rem;
+    margin: 8px 0;
+}
+
+b {
+    color: #ffe08f;
 }
