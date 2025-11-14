@@ -132,6 +132,168 @@ def run_flask():
 
 threading.Thread(target=run_flask, daemon=True).start()
 
+# ------------------- Live guild tools (no DB) -------------------
+import asyncio
+from typing import List, Dict
+
+def run_coro(coro, timeout: int = 10):
+    """Run coroutine in the bot loop and return result (threadsafe)."""
+    try:
+        fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
+        return fut.result(timeout)
+    except Exception as e:
+        return {"error": f"{e}"}
+
+# ------------------- Audit logs (live) -------------------
+@app.route("/api/guild/<int:guild_id>/logs")
+def api_guild_logs(guild_id):
+    try:
+        guild = bot.get_guild(guild_id)
+        if guild is None:
+            return jsonify({"error": "Guild not found"}), 404
+
+        async def _fetch():
+            out = []
+            async for entry in guild.audit_logs(limit=50):
+                out.append({
+                    "id": entry.id,
+                    "action": str(entry.action),
+                    "target": str(entry.target),
+                    "user": str(entry.user),
+                    "reason": entry.reason,
+                    "created_at": entry.created_at.isoformat()
+                })
+            return out
+
+        result = run_coro(_fetch())
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ------------------- Recent messages preview (per-guild) -------------------
+@app.route("/api/guild/<int:guild_id>/messages")
+def api_guild_messages(guild_id):
+    try:
+        guild = bot.get_guild(guild_id)
+        if guild is None:
+            return jsonify({"error": "Guild not found"}), 404
+
+        async def _fetch():
+            # find a text channel bot can read
+            channel = None
+            for ch in guild.text_channels:
+                perms = guild.me.permissions_in(ch)
+                if perms.read_messages and perms.read_message_history:
+                    channel = ch
+                    break
+            if channel is None:
+                return {"error": "No readable text channel found"}
+
+            msgs = []
+            async for m in channel.history(limit=50):
+                msgs.append({
+                    "id": m.id,
+                    "author": str(m.author),
+                    "author_id": m.author.id,
+                    "content": m.content[:800],
+                    "created_at": m.created_at.isoformat(),
+                    "channel": channel.name
+                })
+            return msgs
+
+        result = run_coro(_fetch())
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ------------------- Members (live list, capped) -------------------
+@app.route("/api/guild/<int:guild_id>/members")
+def api_guild_members(guild_id):
+    try:
+        guild = bot.get_guild(guild_id)
+        if guild is None:
+            return jsonify({"error": "Guild not found"}), 404
+
+        async def _fetch():
+            members = []
+            # cap results to avoid huge payload (e.g. 500)
+            count = 0
+            async for m in guild.fetch_members(limit=500):
+                members.append({
+                    "id": m.id,
+                    "name": str(m),
+                    "display_name": m.display_name,
+                    "avatar": m.display_avatar.url if m.display_avatar else None,
+                    "joined_at": m.joined_at.isoformat() if m.joined_at else None,
+                    "roles": [r.name for r in m.roles if r.name != "@everyone"]
+                })
+                count += 1
+                if count >= 500:
+                    break
+            return members
+
+        result = run_coro(_fetch(), timeout=20)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ------------------- Roles (list and basic info) -------------------
+@app.route("/api/guild/<int:guild_id>/roles")
+def api_guild_roles(guild_id):
+    try:
+        guild = bot.get_guild(guild_id)
+        if guild is None:
+            return jsonify({"error": "Guild not found"}), 404
+
+        roles = []
+        for r in guild.roles:
+            roles.append({
+                "id": r.id,
+                "name": r.name,
+                "color": r.color.value if hasattr(r, "color") else None,
+                "position": r.position,
+                "hoist": r.hoist
+            })
+        return jsonify(roles)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ------------------- Role assign/remove (live actions) -------------------
+@app.route("/api/guild/<int:guild_id>/role/assign", methods=["POST"])
+def api_guild_role_assign(guild_id):
+    """
+    POST JSON: {"member_id": 123, "role_id": 456, "action": "add"|'remove'}
+    """
+    try:
+        data = request.get_json(force=True)
+        member_id = int(data.get("member_id"))
+        role_id = int(data.get("role_id"))
+        action = data.get("action", "add")
+
+        guild = bot.get_guild(guild_id)
+        if guild is None:
+            return jsonify({"error": "Guild not found"}), 404
+
+        async def _do():
+            member = guild.get_member(member_id)
+            if member is None:
+                member = await guild.fetch_member(member_id)
+            role = guild.get_role(role_id)
+            if role is None:
+                return {"error": "Role not found"}
+
+            if action == "add":
+                await member.add_roles(role, reason="Assigned via dashboard")
+                return {"status": "role added"}
+            else:
+                await member.remove_roles(role, reason="Removed via dashboard")
+                return {"status": "role removed"}
+
+        result = run_coro(_do(), timeout=15)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # ------------------- Discord Bot Setup -----------------------
 intents = discord.Intents.default()
 intents.message_content = True
