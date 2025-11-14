@@ -35,6 +35,10 @@ def home():
 def show_commands():
     return render_template("commands.html")
 
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
+
 @app.route("/api/stats")
 def api_stats():
     try:
