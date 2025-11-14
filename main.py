@@ -80,7 +80,7 @@ def api_stats():
 def api_guilds():
     """Return a list of guilds the bot is in."""
     try:
-        @app.route("/api/guilds")
+@app.route("/api/guilds")
 def api_guilds():
     try:
         guild_list = [{"id": g.id, "name": g.name} for g in bot.guilds]
