@@ -132,6 +132,117 @@ def run_flask():
 
 threading.Thread(target=run_flask, daemon=True).start()
 
+# ---------------------------------------
+# GUILD BASIC INFO
+# ---------------------------------------
+@app.route("/api/guild/<int:guild_id>/info")
+def api_guild_info(guild_id):
+    guild = bot.get_guild(guild_id)
+    if not guild:
+        return jsonify({"error": "Guild not found"}), 404
+
+    return jsonify({
+        "id": guild.id,
+        "name": guild.name,
+        "members": guild.member_count,
+        "icon": str(guild.icon.url) if guild.icon else None
+    })
+
+
+# ---------------------------------------
+# GUILD MEMBERS (names only)
+# ---------------------------------------
+@app.route("/api/guild/<int:guild_id>/members")
+def api_guild_members(guild_id):
+    guild = bot.get_guild(guild_id)
+    if not guild:
+        return jsonify({"error": "Guild not found"}), 404
+
+    return jsonify({
+        "members": [member.name for member in guild.members]
+    })
+
+
+# ---------------------------------------
+# GUILD ROLES
+# ---------------------------------------
+@app.route("/api/guild/<int:guild_id>/roles")
+def api_guild_roles(guild_id):
+    guild = bot.get_guild(guild_id)
+    if not guild:
+        return jsonify({"error": "Guild not found"}), 404
+
+    return jsonify({
+        "roles": [
+            {"id": role.id, "name": role.name, "color": str(role.color)}
+            for role in guild.roles
+        ]
+    })
+
+
+# ---------------------------------------
+# KICK MEMBER
+# ---------------------------------------
+@app.route("/api/guild/<int:guild_id>/kick", methods=["POST"])
+def api_kick_member(guild_id):
+    data = request.json
+    member_id = int(data.get("member_id"))
+
+    guild = bot.get_guild(guild_id)
+    member = guild.get_member(member_id)
+
+    if not member:
+        return jsonify({"error": "Member not found"}), 404
+
+    try:
+        asyncio.run_coroutine_threadsafe(member.kick(reason="Dashboard Action"), bot.loop)
+        return jsonify({"success": True})
+    except:
+        return jsonify({"error": "Kick failed"}), 500
+
+
+# ---------------------------------------
+# BAN MEMBER
+# ---------------------------------------
+@app.route("/api/guild/<int:guild_id>/ban", methods=["POST"])
+def api_ban_member(guild_id):
+    data = request.json
+    member_id = int(data.get("member_id"))
+
+    guild = bot.get_guild(guild_id)
+    member = guild.get_member(member_id)
+
+    if not member:
+        return jsonify({"error": "Member not found"}), 404
+
+    try:
+        asyncio.run_coroutine_threadsafe(member.ban(reason="Dashboard Action"), bot.loop)
+        return jsonify({"success": True})
+    except:
+        return jsonify({"error": "Ban failed"}), 500
+
+
+# ---------------------------------------
+# UNBAN MEMBER
+# ---------------------------------------
+@app.route("/api/guild/<int:guild_id>/unban", methods=["POST"])
+def api_unban_member(guild_id):
+    data = request.json
+    user_id = int(data.get("user_id"))
+
+    guild = bot.get_guild(guild_id)
+
+    try:
+        bans = asyncio.run_coroutine_threadsafe(guild.bans(), bot.loop).result()
+        user = discord.utils.get(bans, user__id=user_id)
+        if not user:
+            return jsonify({"error": "User not banned"}), 404
+
+        asyncio.run_coroutine_threadsafe(guild.unban(user.user), bot.loop)
+        return jsonify({"success": True})
+    except:
+        return jsonify({"error": "Unban failed"}), 500
+
 # ------------------- Live guild tools (no DB) -------------------
 import asyncio
 from typing import List, Dict
