@@ -18,17 +18,13 @@
     </ul>
 </nav>
 
-<div class="container">
-
     <h2 class="glow-gold big-title">Dashboard</h2>
 
-    <!-- BOT STATS -->
     <div id="dashboard-stats" class="dashboard-card">
         <h3 class="glow-gold">Live Bot Stats</h3>
         <p>Loading bot statistics...</p>
     </div>
 
-    <!-- GUILD SELECTOR -->
     <div class="dashboard-card">
         <h3 class="glow-gold">Select a Server</h3>
         <select id="guild-select" class="guild-dropdown">
@@ -36,16 +32,25 @@
         </select>
     </div>
 
-    <!-- GUILD INFO -->
     <div id="guild-info-box" class="dashboard-card">
         <h3 class="glow-gold">Server Details</h3>
         <p>Select a server to view info.</p>
     </div>
 
-    <!-- CONTROL PANEL -->
+    <!-- Logs & Messages -->
+    <div class="dashboard-row">
+      <div id="logs-box" class="dashboard-card half"></div>
+      <div id="messages-box" class="dashboard-card half"></div>
+    </div>
+
+    <!-- Members & Roles -->
+    <div class="dashboard-row">
+      <div id="members-box" class="dashboard-card half"></div>
+      <div id="roles-box" class="dashboard-card half"></div>
+    </div>
+
     <div id="control-panel" class="dashboard-card">
         <h3 class="glow-gold">Bot Controls</h3>
-
         <button class="dash-btn" onclick="sendBotCommand('restart')">Restart Bot</button>
         <button class="dash-btn" onclick="sendBotCommand('sync')">Sync Commands</button>
         <button class="dash-btn" onclick="sendBotCommand('status')">Refresh Status</button>
