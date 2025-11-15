@@ -19,14 +19,37 @@ from flask import Flask
 import discord
 from discord.ext import commands
 
-# ------------------- Flask Setup for Uptime -------------------
-from flask import Flask, render_template, jsonify
-import threading, os, psutil, platform
-from datetime import datetime
+# ------------------- Flask (detailed & fixed) -------------------
+from flask import Flask, render_template, jsonify, request, abort
+import threading
+import os
+import psutil
+import platform
+import asyncio
+import time
+from datetime import datetime, timezone
 
 app = Flask(__name__)
-bot_start_time = datetime.utcnow()
+# timezone-aware start time
+bot_start_time = datetime.now(timezone.utc)
 
+# SECURITY: set a secret string to enable POST control endpoints (kick/ban/restart/sync).
+# If None, control endpoints are disabled and return 403.
+# To enable, set a strong string here (or later in code) and use it in POST body { "secret": "..." }.
+DASHBOARD_SECRET = supersecret  # <-- set to e.g. "supersecret" if you want to use control POSTs
+
+# ------------------- Helper: run coroutine in bot loop -------------------
+def run_coro(coro, timeout: int = 10):
+    """
+    Run coroutine inside bot.loop thread-safely and return result or raise on error.
+    """
+    try:
+        fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
+        return fut.result(timeout)
+    except Exception as e:
+        raise
+
+# ------------------- Pages -------------------
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -36,13 +59,17 @@ def show_commands():
     return render_template("commands.html")
 
 @app.route("/dashboard")
-def dashboard():
+def show_dashboard():
     return render_template("dashboard.html")
 
+# ------------------- Basic stats -------------------
 @app.route("/api/stats")
 def api_stats():
+    """
+    Returns CPU, memory, uptime, ping, servers, users, OS info.
+    """
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         uptime_delta = now - bot_start_time
         days, remainder = divmod(uptime_delta.total_seconds(), 86400)
         hours, remainder = divmod(remainder, 3600)
@@ -54,13 +81,13 @@ def api_stats():
         os_info = f"{platform.system()} {platform.release()}"
 
         try:
-            ping = f"{round(bot.latency * 1000)}ms"
+            ping = f"{round(bot.latency * 1000, 2)}ms"
             servers = len(bot.guilds)
             users = sum(g.member_count for g in bot.guilds)
         except Exception:
             ping = "N/A"
-            servers = "N/A"
-            users = "N/A"
+            servers = 0
+            users = 0
 
         return jsonify({
             "uptime": uptime_str,
@@ -72,22 +99,29 @@ def api_stats():
             "os": os_info
         })
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}), 500
 
-# ------------------- Dashboard API Routes -------------------
-
+# ------------------- Guild list (summary) -------------------
 @app.route("/api/guilds")
 def api_guilds():
-    """Return a list of guilds the bot is in."""
     try:
-        guild_list = [{"id": g.id, "name": g.name} for g in bot.guilds]
+        guild_list = []
+        for g in bot.guilds:
+            guild_list.append({
+                "id": g.id,
+                "name": g.name,
+                "icon": str(g.icon.url) if g.icon else None,
+                "member_count": g.member_count,
+                "channels_count": len(g.channels),
+                "roles_count": len(g.roles),
+            })
         return jsonify(guild_list)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# ------------------- Guild detailed info -------------------
 @app.route("/api/guild/<int:guild_id>/info")
 def api_guild_info(guild_id):
-    """Return information for a single guild."""
     try:
         guild = bot.get_guild(guild_id)
         if guild is None:
@@ -97,163 +131,100 @@ def api_guild_info(guild_id):
             "id": guild.id,
             "name": guild.name,
             "member_count": guild.member_count,
-            "owner": str(guild.owner),
-            "roles": [role.name for role in guild.roles],
-            "channels": [ch.name for ch in guild.channels]
+            "owner": {"id": getattr(guild.owner, "id", None), "name": str(guild.owner) if guild.owner else None},
+            "icon": str(guild.icon.url) if guild.icon else None,
+            "channels": [{"id": ch.id, "name": ch.name, "type": str(ch.type)} for ch in guild.channels],
+            "roles": [{"id": r.id, "name": r.name, "color": r.color.value if hasattr(r, "color") else None, "position": r.position} for r in guild.roles],
+            "emojis": [str(e) for e in guild.emojis] if hasattr(guild, "emojis") else [],
+            "boosts": getattr(guild, "premium_subscription_count", 0),
+            "created_at": guild.created_at.isoformat() if getattr(guild, "created_at", None) else None
         }
-
         return jsonify(info)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/control/<action>")
-def api_control(action):
-    if action == "restart":
-        try:
-            os._exit(0)
-        except:
-            return jsonify({"error": "Restart failed"}), 500
-
-    elif action == "sync":
-        try:
-            asyncio.run(bot.tree.sync())
-            return jsonify({"status": "Commands synced"})
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-    elif action == "status":
-        return jsonify({"status": "OK"})
-
-    return jsonify({"error": "Unknown action"}), 400
-
-def run_flask():
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
-
-threading.Thread(target=run_flask, daemon=True).start()
-
-# ---------------------------------------
-# GUILD BASIC INFO
-# ---------------------------------------
-@app.route("/api/guild/<int:guild_id>/info")
-def api_guild_info(guild_id):
-    guild = bot.get_guild(guild_id)
-    if not guild:
-        return jsonify({"error": "Guild not found"}), 404
-
-    return jsonify({
-        "id": guild.id,
-        "name": guild.name,
-        "members": guild.member_count,
-        "icon": str(guild.icon.url) if guild.icon else None
-    })
-
-
-# ---------------------------------------
-# GUILD MEMBERS (names only)
-# ---------------------------------------
+# ------------------- Members (detailed, capped) -------------------
 @app.route("/api/guild/<int:guild_id>/members")
 def api_guild_members(guild_id):
-    guild = bot.get_guild(guild_id)
-    if not guild:
-        return jsonify({"error": "Guild not found"}), 404
+    """
+    Returns up to 500 members with basic metadata. Uses fetch_members to ensure completeness.
+    """
+    try:
+        guild = bot.get_guild(guild_id)
+        if guild is None:
+            return jsonify({"error": "Guild not found"}), 404
 
-    return jsonify({
-        "members": [member.name for member in guild.members]
-    })
+        async def _fetch():
+            members = []
+            # use fetch_members for complete data; cap at 500
+            idx = 0
+            async for m in guild.fetch_members(limit=500):
+                members.append({
+                    "id": m.id,
+                    "name": str(m),
+                    "display_name": m.display_name,
+                    "avatar": m.display_avatar.url if m.display_avatar else None,
+                    "joined_at": m.joined_at.isoformat() if m.joined_at else None,
+                    "roles": [r.name for r in m.roles if r.name != "@everyone"]
+                })
+                idx += 1
+                if idx >= 500:
+                    break
+            return members
 
+        members = run_coro(_fetch(), timeout=20)
+        return jsonify(members)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-# ---------------------------------------
-# GUILD ROLES
-# ---------------------------------------
+# ------------------- Roles (list) -------------------
 @app.route("/api/guild/<int:guild_id>/roles")
 def api_guild_roles(guild_id):
-    guild = bot.get_guild(guild_id)
-    if not guild:
-        return jsonify({"error": "Guild not found"}), 404
-
-    return jsonify({
-        "roles": [
-            {"id": role.id, "name": role.name, "color": str(role.color)}
-            for role in guild.roles
-        ]
-    })
-
-
-# ---------------------------------------
-# KICK MEMBER
-# ---------------------------------------
-@app.route("/api/guild/<int:guild_id>/kick", methods=["POST"])
-def api_kick_member(guild_id):
-    data = request.json
-    member_id = int(data.get("member_id"))
-
-    guild = bot.get_guild(guild_id)
-    member = guild.get_member(member_id)
-
-    if not member:
-        return jsonify({"error": "Member not found"}), 404
-
     try:
-        asyncio.run_coroutine_threadsafe(member.kick(reason="Dashboard Action"), bot.loop)
-        return jsonify({"success": True})
-    except:
-        return jsonify({"error": "Kick failed"}), 500
+        guild = bot.get_guild(guild_id)
+        if guild is None:
+            return jsonify({"error": "Guild not found"}), 404
 
-
-# ---------------------------------------
-# BAN MEMBER
-# ---------------------------------------
-@app.route("/api/guild/<int:guild_id>/ban", methods=["POST"])
-def api_ban_member(guild_id):
-    data = request.json
-    member_id = int(data.get("member_id"))
-
-    guild = bot.get_guild(guild_id)
-    member = guild.get_member(member_id)
-
-    if not member:
-        return jsonify({"error": "Member not found"}), 404
-
-    try:
-        asyncio.run_coroutine_threadsafe(member.ban(reason="Dashboard Action"), bot.loop)
-        return jsonify({"success": True})
-    except:
-        return jsonify({"error": "Ban failed"}), 500
-
-
-# ---------------------------------------
-# UNBAN MEMBER
-# ---------------------------------------
-@app.route("/api/guild/<int:guild_id>/unban", methods=["POST"])
-def api_unban_member(guild_id):
-    data = request.json
-    user_id = int(data.get("user_id"))
-
-    guild = bot.get_guild(guild_id)
-
-    try:
-        bans = asyncio.run_coroutine_threadsafe(guild.bans(), bot.loop).result()
-        user = discord.utils.get(bans, user__id=user_id)
-        if not user:
-            return jsonify({"error": "User not banned"}), 404
-
-        asyncio.run_coroutine_threadsafe(guild.unban(user.user), bot.loop)
-        return jsonify({"success": True})
-    except:
-        return jsonify({"error": "Unban failed"}), 500
-
-# ------------------- Live guild tools (no DB) -------------------
-import asyncio
-from typing import List, Dict
-
-def run_coro(coro, timeout: int = 10):
-    """Run coroutine in the bot loop and return result (threadsafe)."""
-    try:
-        fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
-        return fut.result(timeout)
+        roles = [{"id": r.id, "name": r.name, "color": r.color.value if hasattr(r, "color") else None, "position": r.position, "hoist": r.hoist} for r in guild.roles]
+        return jsonify(roles)
     except Exception as e:
-        return {"error": f"{e}"}
+        return jsonify({"error": str(e)}), 500
+
+# ------------------- Recent messages (from first readable text channel) -------------------
+@app.route("/api/guild/<int:guild_id>/messages")
+def api_guild_messages(guild_id):
+    try:
+        guild = bot.get_guild(guild_id)
+        if guild is None:
+            return jsonify({"error": "Guild not found"}), 404
+
+        async def _fetch():
+            # find a text channel bot can read
+            channel = None
+            for ch in guild.text_channels:
+                perms = guild.me.permissions_in(ch)
+                if perms.read_messages and perms.read_message_history:
+                    channel = ch
+                    break
+            if channel is None:
+                return {"error": "No readable text channel found"}
+
+            msgs = []
+            async for m in channel.history(limit=50):
+                msgs.append({
+                    "id": m.id,
+                    "author": str(m.author),
+                    "author_id": m.author.id,
+                    "content": (m.content[:800] + "…") if len(m.content) > 800 else m.content,
+                    "created_at": m.created_at.isoformat(),
+                    "channel": channel.name
+                })
+            return msgs
+
+        result = run_coro(_fetch())
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ------------------- Audit logs (live) -------------------
 @app.route("/api/guild/<int:guild_id>/logs")
@@ -281,129 +252,169 @@ def api_guild_logs(guild_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ------------------- Recent messages preview (per-guild) -------------------
-@app.route("/api/guild/<int:guild_id>/messages")
-def api_guild_messages(guild_id):
+# ------------------- Kick / Ban / Unban (POST) -------------------
+def _check_secret(payload_secret):
+    if DASHBOARD_SECRET is None:
+        return False
+    return payload_secret == DASHBOARD_SECRET
+
+@app.route("/api/guild/<int:guild_id>/kick", methods=["POST"])
+def api_kick_member(guild_id):
+    payload = request.get_json(force=True)
+    if not _check_secret(payload.get("secret")):
+        return jsonify({"error": "Control endpoints disabled or invalid secret"}), 403
+    member_id = int(payload.get("member_id", 0))
+    guild = bot.get_guild(guild_id)
+    if not guild:
+        return jsonify({"error": "Guild not found"}), 404
+
+    async def _do():
+        member = guild.get_member(member_id)
+        if member is None:
+            try:
+                member = await guild.fetch_member(member_id)
+            except:
+                return {"error": "Member not found"}
+        await member.kick(reason=f"Dashboard action by {payload.get('by','dashboard')}")
+        return {"success": True}
+
     try:
-        guild = bot.get_guild(guild_id)
-        if guild is None:
-            return jsonify({"error": "Guild not found"}), 404
-
-        async def _fetch():
-            # find a text channel bot can read
-            channel = None
-            for ch in guild.text_channels:
-                perms = guild.me.permissions_in(ch)
-                if perms.read_messages and perms.read_message_history:
-                    channel = ch
-                    break
-            if channel is None:
-                return {"error": "No readable text channel found"}
-
-            msgs = []
-            async for m in channel.history(limit=50):
-                msgs.append({
-                    "id": m.id,
-                    "author": str(m.author),
-                    "author_id": m.author.id,
-                    "content": m.content[:800],
-                    "created_at": m.created_at.isoformat(),
-                    "channel": channel.name
-                })
-            return msgs
-
-        result = run_coro(_fetch())
-        return jsonify(result)
+        res = run_coro(_do(), timeout=15)
+        return jsonify(res)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ------------------- Members (live list, capped) -------------------
-@app.route("/api/guild/<int:guild_id>/members")
-def api_guild_members(guild_id):
+@app.route("/api/guild/<int:guild_id>/ban", methods=["POST"])
+def api_ban_member(guild_id):
+    payload = request.get_json(force=True)
+    if not _check_secret(payload.get("secret")):
+        return jsonify({"error": "Control endpoints disabled or invalid secret"}), 403
+    member_id = int(payload.get("member_id", 0))
+    guild = bot.get_guild(guild_id)
+    if not guild:
+        return jsonify({"error": "Guild not found"}), 404
+
+    async def _do():
+        member = guild.get_member(member_id)
+        if member is None:
+            try:
+                member = await guild.fetch_member(member_id)
+            except:
+                return {"error": "Member not found"}
+        await guild.ban(member, reason=f"Dashboard action by {payload.get('by','dashboard')}")
+        return {"success": True}
+
     try:
-        guild = bot.get_guild(guild_id)
-        if guild is None:
-            return jsonify({"error": "Guild not found"}), 404
-
-        async def _fetch():
-            members = []
-            # cap results to avoid huge payload (e.g. 500)
-            count = 0
-            async for m in guild.fetch_members(limit=500):
-                members.append({
-                    "id": m.id,
-                    "name": str(m),
-                    "display_name": m.display_name,
-                    "avatar": m.display_avatar.url if m.display_avatar else None,
-                    "joined_at": m.joined_at.isoformat() if m.joined_at else None,
-                    "roles": [r.name for r in m.roles if r.name != "@everyone"]
-                })
-                count += 1
-                if count >= 500:
-                    break
-            return members
-
-        result = run_coro(_fetch(), timeout=20)
-        return jsonify(result)
+        res = run_coro(_do(), timeout=15)
+        return jsonify(res)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ------------------- Roles (list and basic info) -------------------
-@app.route("/api/guild/<int:guild_id>/roles")
-def api_guild_roles(guild_id):
-    try:
-        guild = bot.get_guild(guild_id)
-        if guild is None:
-            return jsonify({"error": "Guild not found"}), 404
+@app.route("/api/guild/<int:guild_id>/unban", methods=["POST"])
+def api_unban_member(guild_id):
+    payload = request.get_json(force=True)
+    if not _check_secret(payload.get("secret")):
+        return jsonify({"error": "Control endpoints disabled or invalid secret"}), 403
 
-        roles = []
-        for r in guild.roles:
-            roles.append({
-                "id": r.id,
-                "name": r.name,
-                "color": r.color.value if hasattr(r, "color") else None,
-                "position": r.position,
-                "hoist": r.hoist
-            })
-        return jsonify(roles)
+    user_id = int(payload.get("user_id", 0))
+    guild = bot.get_guild(guild_id)
+    if not guild:
+        return jsonify({"error": "Guild not found"}), 404
+
+    try:
+        # fetch bans and find matching user.id
+        bans = run_coro(guild.bans())
+        target = None
+        for b in bans:
+            if getattr(b.user, "id", None) == user_id:
+                target = b.user
+                break
+        if not target:
+            return jsonify({"error": "User not in ban list"}), 404
+
+        run_coro(guild.unban(target))
+        return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ------------------- Role assign/remove (live actions) -------------------
+# ------------------- Role assign/remove (POST) -------------------
 @app.route("/api/guild/<int:guild_id>/role/assign", methods=["POST"])
 def api_guild_role_assign(guild_id):
-    """
-    POST JSON: {"member_id": 123, "role_id": 456, "action": "add"|'remove'}
-    """
+    payload = request.get_json(force=True)
+    if not _check_secret(payload.get("secret")):
+        return jsonify({"error": "Control endpoints disabled or invalid secret"}), 403
+
     try:
-        data = request.get_json(force=True)
-        member_id = int(data.get("member_id"))
-        role_id = int(data.get("role_id"))
-        action = data.get("action", "add")
+        member_id = int(payload.get("member_id"))
+        role_id = int(payload.get("role_id"))
+        action = payload.get("action", "add")
+    except Exception:
+        return jsonify({"error": "Invalid payload"}), 400
 
-        guild = bot.get_guild(guild_id)
-        if guild is None:
-            return jsonify({"error": "Guild not found"}), 404
+    guild = bot.get_guild(guild_id)
+    if not guild:
+        return jsonify({"error": "Guild not found"}), 404
 
-        async def _do():
-            member = guild.get_member(member_id)
-            if member is None:
+    async def _do():
+        member = guild.get_member(member_id)
+        if member is None:
+            try:
                 member = await guild.fetch_member(member_id)
-            role = guild.get_role(role_id)
-            if role is None:
-                return {"error": "Role not found"}
+            except:
+                return {"error": "Member not found"}
+        role = guild.get_role(role_id)
+        if role is None:
+            return {"error": "Role not found"}
+        if action == "add":
+            await member.add_roles(role, reason="Assigned via dashboard")
+            return {"status": "role added"}
+        else:
+            await member.remove_roles(role, reason="Removed via dashboard")
+            return {"status": "role removed"}
 
-            if action == "add":
-                await member.add_roles(role, reason="Assigned via dashboard")
-                return {"status": "role added"}
-            else:
-                await member.remove_roles(role, reason="Removed via dashboard")
-                return {"status": "role removed"}
-
-        result = run_coro(_do(), timeout=15)
-        return jsonify(result)
+    try:
+        res = run_coro(_do(), timeout=15)
+        return jsonify(res)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# ------------------- Control / restart / sync / status -------------------
+@app.route("/api/control/<action>", methods=["GET", "POST"])
+def api_control(action):
+    # status always allowed
+    if action == "status":
+        return jsonify({"status": "OK"})
+
+    # other actions require secret
+    payload = request.get_json(silent=True) or {}
+    if not _check_secret(payload.get("secret")):
+        return jsonify({"error": "Control endpoints disabled or invalid secret"}), 403
+
+    if action == "restart":
+        try:
+            # best-effort graceful exit (render will restart the service)
+            os._exit(0)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    if action == "sync":
+        try:
+            # sync application commands
+            fut = asyncio.run_coroutine_threadsafe(bot.tree.sync(), bot.loop)
+            fut.result(15)
+            return jsonify({"status": "Commands synced"})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    return jsonify({"error": "Unknown action"}), 400
+
+# run Flask in a daemon thread (keep as before)
+def run_flask():
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+threading.Thread(target=run_flask, daemon=True).start()
+# ------------------- End Flask block -------------------
 
 # ------------------- Discord Bot Setup -----------------------
 intents = discord.Intents.default()
