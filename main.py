@@ -38,6 +38,169 @@ bot_start_time = datetime.now(timezone.utc)
 # To enable, set a strong string here (or later in code) and use it in POST body { "secret": "..." }.
 DASHBOARD_SECRET = None  # <-- set to e.g. "supersecret" if you want to use control POSTs
 
+# ------------------- Nexus Connect System (no env vars) -------------------
+import secrets
+import time
+from flask import request, session, redirect, url_for
+
+# Hard-coded (change these to match your deploy URL / secret if you want)
+DASHBOARD_URL = "https://nexus-02-5.onrender.com"  # <-- change this to your public site if different
+SESSION_SECRET = "nexus_default_session_secret_change_me"  # <-- change to something long & random
+
+# Flask session secret (zero env var approach)
+app.secret_key = SESSION_SECRET
+
+# In-memory token store: token -> {"user_id": int, "expires_at": unix_ts}
+CONNECT_TOKENS = {}
+CONNECT_TOKEN_TTL = 300  # seconds (5 minutes)
+
+
+def purge_expired_tokens():
+    """Remove expired tokens from CONNECT_TOKENS (called on-access)."""
+    now = time.time()
+    expired = [t for t, v in CONNECT_TOKENS.items() if v["expires_at"] <= now]
+    for t in expired:
+        del CONNECT_TOKENS[t]
+
+
+def create_connect_token(user_id: int) -> str:
+    """Generate a one-time connect token for a user_id."""
+    purge_expired_tokens()
+    token = secrets.token_urlsafe(32)
+    CONNECT_TOKENS[token] = {
+        "user_id": int(user_id),
+        "expires_at": time.time() + CONNECT_TOKEN_TTL
+    }
+    return token
+
+
+def consume_connect_token(token: str):
+    """Return user_id if token valid, and remove token. Otherwise None."""
+    purge_expired_tokens()
+    info = CONNECT_TOKENS.pop(token, None)
+    if not info:
+        return None
+    if info["expires_at"] < time.time():
+        return None
+    return info["user_id"]
+
+
+def run_coro(coro, timeout: int = 10):
+    """Run coroutine in bot's loop in a thread-safe manner and return result."""
+    try:
+        fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
+        return fut.result(timeout)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# ------------------- Discord command to generate connect link -------------------
+@bot.command(name="connect")
+async def connect_cmd(ctx):
+    """
+    n/connect
+    Generates a one-time login URL for the user to access the web dashboard as themselves.
+    Link expires in CONNECT_TOKEN_TTL seconds.
+    """
+    try:
+        token = create_connect_token(ctx.author.id)
+        url = f"{DASHBOARD_URL}/connect?token={token}"
+        # Try DM first for privacy
+        try:
+            await ctx.author.send(
+                f"🔗 **Nexus Connect**\nClick this link to sign into the dashboard as you:\n{url}\n\n"
+                f"This link expires in {CONNECT_TOKEN_TTL//60} minutes."
+            )
+            await ctx.send("✅ **[I sent you a DM with your connect link.]**")
+        except Exception:
+            # fallback to channel message if DM fails
+            await ctx.send(
+                f"🔗 **Nexus Connect**\nHere is your one-time link (expires in 5 minutes):\n{url}"
+            )
+    except Exception as e:
+        await ctx.send(f"⚠️ **[Failed to create connect link]** {e}")
+
+
+# ------------------- Flask route: consume token and set session -------------------
+@app.route("/connect")
+def web_connect():
+    """
+    /connect?token=abc
+    Validates the token, sets Flask session['user_id'], and redirects to dashboard.
+    """
+    try:
+        token = request.args.get("token", None)
+        if not token:
+            return "Missing token", 400
+
+        user_id = consume_connect_token(token)
+        if not user_id:
+            return render_template("connect.html", success=False, reason="Invalid or expired token.")
+
+        # set session
+        session.clear()
+        session["user_id"] = int(user_id)
+        session["connected_at"] = int(time.time())
+
+        # redirect to dashboard (or show a short page)
+        return render_template("connect.html", success=True, dashboard_url=url_for("dashboard"))
+    except Exception as e:
+        return f"Error: {e}", 500
+
+
+# ------------------- Flask API: who am i? (for dashboard JS to call) -------------------
+@app.route("/api/me")
+def api_me():
+    """
+    Returns the logged-in Discord user info (based on Flask session).
+    Also lists guilds where the user has manage_guild or administrator permissions.
+    """
+    try:
+        uid = session.get("user_id")
+        if not uid:
+            return jsonify({"logged_in": False})
+
+        # fetch user object
+        user = run_coro(bot.fetch_user(int(uid)))
+        if isinstance(user, dict) and user.get("error"):
+            return jsonify({"error": str(user["error"])}), 500
+
+        # Determine manageable guilds
+        manageable = []
+        for g in bot.guilds:
+            # member may be None if not cached; try get_member then fetch_member if needed
+            try:
+                member = g.get_member(int(uid))
+                if member is None:
+                    # attempt fetch (threadsafe)
+                    m_fetch = run_coro(g.fetch_member(int(uid)), timeout=8)
+                    if isinstance(m_fetch, dict) and m_fetch.get("error"):
+                        member = None
+                    else:
+                        member = m_fetch
+                if member:
+                    perms = member.guild_permissions
+                    if perms.administrator or perms.manage_guild or perms.manage_roles or perms.manage_channels:
+                        manageable.append({"id": g.id, "name": g.name})
+            except Exception:
+                continue
+
+        return jsonify({
+            "logged_in": True,
+            "id": int(uid),
+            "username": str(user),
+            "manageable_guilds": manageable
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ------------------- Flask API: logout -------------------
+@app.route("/connect/logout")
+def connect_logout():
+    session.clear()
+    return redirect(url_for("home"))
+
 # ------------------- Helper: run coroutine in bot loop -------------------
 def run_coro(coro, timeout: int = 10):
     """
