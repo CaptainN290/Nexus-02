@@ -93,34 +93,6 @@ def run_coro(coro, timeout: int = 10):
     except Exception as e:
         return {"error": str(e)}
 
-
-# ------------------- Discord command to generate connect link -------------------
-@bot.command(name="connect")
-async def connect_cmd(ctx):
-    """
-    n/connect
-    Generates a one-time login URL for the user to access the web dashboard as themselves.
-    Link expires in CONNECT_TOKEN_TTL seconds.
-    """
-    try:
-        token = create_connect_token(ctx.author.id)
-        url = f"{DASHBOARD_URL}/connect?token={token}"
-        # Try DM first for privacy
-        try:
-            await ctx.author.send(
-                f"🔗 **Nexus Connect**\nClick this link to sign into the dashboard as you:\n{url}\n\n"
-                f"This link expires in {CONNECT_TOKEN_TTL//60} minutes."
-            )
-            await ctx.send("✅ **[I sent you a DM with your connect link.]**")
-        except Exception:
-            # fallback to channel message if DM fails
-            await ctx.send(
-                f"🔗 **Nexus Connect**\nHere is your one-time link (expires in 5 minutes):\n{url}"
-            )
-    except Exception as e:
-        await ctx.send(f"⚠️ **[Failed to create connect link]** {e}")
-
-
 # ------------------- Flask route: consume token and set session -------------------
 @app.route("/connect")
 def web_connect():
@@ -590,6 +562,32 @@ bot.remove_command("help")  # disables the default help command
 from datetime import datetime, timezone
 
 bot_start_time = datetime.now(timezone.utc)  # ✅ correct, timezone-aware
+
+# ------------------- Discord command to generate connect link -------------------
+@bot.command(name="connect")
+async def connect_cmd(ctx):
+    """
+    n/connect
+    Generates a one-time login URL for the user to access the web dashboard as themselves.
+    Link expires in CONNECT_TOKEN_TTL seconds.
+    """
+    try:
+        token = create_connect_token(ctx.author.id)
+        url = f"{DASHBOARD_URL}/connect?token={token}"
+        # Try DM first for privacy
+        try:
+            await ctx.author.send(
+                f"🔗 **Nexus Connect**\nClick this link to sign into the dashboard as you:\n{url}\n\n"
+                f"This link expires in {CONNECT_TOKEN_TTL//60} minutes."
+            )
+            await ctx.send("✅ **[I sent you a DM with your connect link.]**")
+        except Exception:
+            # fallback to channel message if DM fails
+            await ctx.send(
+                f"🔗 **Nexus Connect**\nHere is your one-time link (expires in 5 minutes):\n{url}"
+            )
+    except Exception as e:
+        await ctx.send(f"⚠️ **[Failed to create connect link]** {e}")
 
 # ------------------- Helper -----------------------
 def no_perm_msg(action):
