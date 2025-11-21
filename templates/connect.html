@@ -1,1 +1,30 @@
-
+<!-- templates/connect.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nexus Connect</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body { background:#0b0b12; color:#e3d9a6; font-family:Lexend, sans-serif; }
+    .box { max-width:720px; margin:80px auto; padding:28px; background:rgba(255,255,255,0.03); border-radius:12px; text-align:center; }
+    .ok { color:#ffd55a; font-weight:700; font-size:1.05rem; }
+    .bad { color:#ff6b6b; font-weight:700; font-size:1.05rem; }
+    a.btn { display:inline-block; margin-top:16px; padding:10px 16px; background:#ffd55a; color:#0b0b12; border-radius:8px; text-decoration:none; font-weight:600; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    {% if success %}
+      <div class="ok">✅ Your connect token was validated — you're signed in.</div>
+      <p>You can now use the dashboard as your Discord account.</p>
+      <a class="btn" href="{{ dashboard_url or '/' }}">Go to Dashboard</a>
+    {% else %}
+      <div class="bad">❌ Could not validate token</div>
+      <p>{{ reason or "Token invalid or expired. Generate a new link in Discord with `n/connect`." }}</p>
+      <a class="btn" href="/">Back home</a>
+    {% endif %}
+  </div>
+</body>
+</html>
