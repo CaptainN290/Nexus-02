@@ -131,3 +131,51 @@ document.addEventListener("DOMContentLoaded", () => {
 setInterval(loadStats, 2000);
 loadStats();
 loadGuilds();
+
+// call /api/me to know who is logged in and which guilds are manageable
+async function loadViewer() {
+    try {
+        const res = await fetch("/api/me");
+        const data = await res.json();
+        if (!data || data.logged_in !== true) {
+            // not logged in
+            const sel = document.getElementById("guild-select");
+            if (sel) sel.innerHTML = `<option>Please sign in via Discord (click 'Connect' on the site)</option>`;
+            document.getElementById("guild-info-box").innerHTML = `<p class="gold-animate">Not signed in. Use <strong>n/connect</strong> in Discord to link.</p>`;
+            return;
+        }
+
+        // show viewer info
+        const viewerBox = document.getElementById("viewer-box");
+        if (viewerBox) {
+            viewerBox.innerHTML = `<p class="gold-animate">Signed in as <b>${data.username}</b></p>`;
+        }
+
+        // populate manageable guilds
+        const sel = document.getElementById("guild-select");
+        if (!sel) return;
+        sel.innerHTML = "";
+        if (!data.manageable_guilds || data.manageable_guilds.length === 0) {
+            sel.innerHTML = `<option>No manageable servers found.</option>`;
+            return;
+        }
+        data.manageable_guilds.forEach(g => {
+            const item = document.createElement("option");
+            item.value = g.id;
+            item.textContent = g.name;
+            sel.appendChild(item);
+        });
+
+        // optionally auto-load first guild info:
+        sel.dispatchEvent(new Event('change'));
+    } catch (err) {
+        console.error("loadViewer error", err);
+    }
+}
+
+// call at DOM ready, plus existing loadStats/loadGuilds
+document.addEventListener("DOMContentLoaded", () => {
+    if (typeof loadViewer === "function") {
+        loadViewer();
+    }
+});
