@@ -567,8 +567,7 @@ def web_connect():
     session["user_id"] = user_id
     session["connected_at"] = int(time.time())
 
-   return render_template("connect.html", success=True, dashboard_url=url_for("show_dashboard"))
-
+    return render_template("connect.html", success=True, dashboard_url=url_for("show_dashboard"))
 # ------------------- Events -----------------------
 @bot.event
 async def on_ready():
