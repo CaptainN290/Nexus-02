@@ -30,14 +30,14 @@ import time
 from datetime import datetime, timezone
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SESSION_SECRET", "dev_secret_key")
 # timezone-aware start time
 bot_start_time = datetime.now(timezone.utc)
 
 # SECURITY: set a secret string to enable POST control endpoints (kick/ban/restart/sync).
 # If None, control endpoints are disabled and return 403.
 # To enable, set a strong string here (or later in code) and use it in POST body { "secret": "..." }.
-DASHBOARD_SECRET = SUPER_secret  # <-- set to e.g. "supersecret" if you want to use control POSTs
-
+app.secret_key = os.environ.get("DASHBOARD_SECRET")
 # ------------------- Nexus Connect: Stateless signed tokens -------------------
 import base64
 import hmac
@@ -109,27 +109,6 @@ async def connect_cmd(ctx):
             await ctx.send(f"🔗 **Nexus Connect**\n{url}")
     except Exception as e:
         await ctx.send(f"⚠️ Error: {e}")
-
-
-# ------------------- Flask: /connect route -------------------
-@app.route("/connect")
-def web_connect():
-    try:
-        token = request.args.get("token")
-        if not token:
-            return "Missing token", 400
-
-        user_id = consume_connect_token(token)
-        if not user_id:
-            return render_template("connect.html", success=False, reason="Invalid or expired token.")
-
-        session.clear()
-        session["user_id"] = user_id
-        session["connected_at"] = int(time.time())
-
-        return render_template("connect.html", success=True, dashboard_url=url_for("dashboard"))
-    except Exception as e:
-        return f"Error: {e}", 500
 
 # ------------------- Flask API: who am i? (for dashboard JS to call) -------------------
 @app.route("/api/me")
