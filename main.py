@@ -36,7 +36,7 @@ bot_start_time = datetime.now(timezone.utc)
 # SECURITY: set a secret string to enable POST control endpoints (kick/ban/restart/sync).
 # If None, control endpoints are disabled and return 403.
 # To enable, set a strong string here (or later in code) and use it in POST body { "secret": "..." }.
-DASHBOARD_SECRET = None  # <-- set to e.g. "supersecret" if you want to use control POSTs
+DASHBOARD_SECRET = SUPER_secret  # <-- set to e.g. "supersecret" if you want to use control POSTs
 
 # ------------------- Nexus Connect: Stateless signed tokens -------------------
 import base64
@@ -47,7 +47,7 @@ import time
 from flask import session, redirect, url_for
 
 DASHBOARD_URL = "https://nexus-02-5.onrender.com"
-CONNECT_SECRET = "nexus_super_secret_key_change_me_908234902384"  # <- CHANGE BEFORE PUBLIC
+CONNECT_SECRET = "not_so_secret_connection"  # <- CHANGE BEFORE PUBLIC
 CONNECT_TOKEN_TTL = 300  # 5 minutes
 
 
