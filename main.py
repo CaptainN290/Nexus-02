@@ -37,7 +37,7 @@ bot_start_time = datetime.now(timezone.utc)
 # SECURITY: set a secret string to enable POST control endpoints (kick/ban/restart/sync).
 # If None, control endpoints are disabled and return 403.
 # To enable, set a strong string here (or later in code) and use it in POST body { "secret": "..." }.
-app.secret_key = os.environ.get("DASHBOARD_SECRET")
+DASHBOARD_SECRET = os.environ.get("DASHBOARD_SECRET")  # for your POST/ADMIN endpoints
 # ------------------- Nexus Connect: Stateless signed tokens -------------------
 import base64
 import hmac
