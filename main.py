@@ -90,26 +90,6 @@ def validate_signed_token(token: str):
     except:
         return None
 
-
-# ------------------- Discord command: n/connect -------------------
-@bot.command(name="connect")
-async def connect_cmd(ctx):
-    try:
-        token = create_signed_token(ctx.author.id)
-        url = f"{DASHBOARD_URL}/connect?token={token}"
-
-        try:
-            await ctx.author.send(
-                f"🔗 **Nexus Connect**\n"
-                f"Login link:\n{url}\n"
-                f"⏳ Expires in {CONNECT_TOKEN_TTL//60} minutes."
-            )
-            await ctx.send("✅ Check your DMs for your Nexus Connect link.")
-        except:
-            await ctx.send(f"🔗 **Nexus Connect**\n{url}")
-    except Exception as e:
-        await ctx.send(f"⚠️ Error: {e}")
-
 # ------------------- Flask API: who am i? (for dashboard JS to call) -------------------
 @app.route("/api/me")
 def api_me():
@@ -552,6 +532,25 @@ bot.remove_command("help")  # disables the default help command
 from datetime import datetime, timezone
 
 bot_start_time = datetime.now(timezone.utc)  # ✅ correct, timezone-aware
+
+# ------------------- Discord command: n/connect -------------------
+@bot.command(name="connect")
+async def connect_cmd(ctx):
+    try:
+        token = create_signed_token(ctx.author.id)
+        url = f"{DASHBOARD_URL}/connect?token={token}"
+
+        try:
+            await ctx.author.send(
+                f"🔗 **Nexus Connect**\n"
+                f"Login link:\n{url}\n"
+                f"⏳ Expires in {CONNECT_TOKEN_TTL//60} minutes."
+            )
+            await ctx.send("✅ Check your DMs for your Nexus Connect link.")
+        except:
+            await ctx.send(f"🔗 **Nexus Connect**\n{url}")
+    except Exception as e:
+        await ctx.send(f"⚠️ Error: {e}")
 
 # ------------------- Discord command to generate connect link -------------------
 @app.route("/connect")
