@@ -114,22 +114,22 @@ async def connect_cmd(ctx):
 # ------------------- Flask: /connect route -------------------
 @app.route("/connect")
 def web_connect():
-    token = request.args.get("token")
-    if not token:
-        return "Missing token", 400
+    try:
+        token = request.args.get("token")
+        if not token:
+            return "Missing token", 400
 
-    user_id = validate_signed_token(token)
-    if not user_id:
-        return render_template("connect.html", success=False, reason="Invalid or expired token.")
+        user_id = consume_connect_token(token)
+        if not user_id:
+            return render_template("connect.html", success=False, reason="Invalid or expired token.")
 
-    session.clear()
-    session["user_id"] = user_id
-    session["connected_at"] = int(time.time())
+        session.clear()
+        session["user_id"] = user_id
+        session["connected_at"] = int(time.time())
 
-    return render_template("connect.html", success=True, dashboard_url=url_for("show_dashboard"))
+        return render_template("connect.html", success=True, dashboard_url=url_for("dashboard"))
     except Exception as e:
         return f"Error: {e}", 500
-
 
 # ------------------- Flask API: who am i? (for dashboard JS to call) -------------------
 @app.route("/api/me")
