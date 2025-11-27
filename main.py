@@ -38,84 +38,95 @@ bot_start_time = datetime.now(timezone.utc)
 # To enable, set a strong string here (or later in code) and use it in POST body { "secret": "..." }.
 DASHBOARD_SECRET = None  # <-- set to e.g. "supersecret" if you want to use control POSTs
 
-# ------------------- Nexus Connect System (no env vars) -------------------
-import secrets
+# ------------------- Nexus Connect: Stateless signed tokens -------------------
+import base64
+import hmac
+import hashlib
+import json
 import time
-from flask import request, session, redirect, url_for
+from flask import session, redirect, url_for
 
-# Hard-coded (change these to match your deploy URL / secret if you want)
-DASHBOARD_URL = "https://nexus-02-5.onrender.com"  # <-- change this to your public site if different
-SESSION_SECRET = "nexus_default_session_secret_change_me"  # <-- change to something long & random
-
-# Flask session secret (zero env var approach)
-app.secret_key = SESSION_SECRET
-
-# In-memory token store: token -> {"user_id": int, "expires_at": unix_ts}
-CONNECT_TOKENS = {}
-CONNECT_TOKEN_TTL = 300  # seconds (5 minutes)
+DASHBOARD_URL = "https://nexus-02-5.onrender.com"
+CONNECT_SECRET = "nexus_super_secret_key_change_me_908234902384"  # <- CHANGE BEFORE PUBLIC
+CONNECT_TOKEN_TTL = 300  # 5 minutes
 
 
-def purge_expired_tokens():
-    """Remove expired tokens from CONNECT_TOKENS (called on-access)."""
-    now = time.time()
-    expired = [t for t, v in CONNECT_TOKENS.items() if v["expires_at"] <= now]
-    for t in expired:
-        del CONNECT_TOKENS[t]
+# ---- Token Generator ----
+def create_signed_token(user_id: int) -> str:
+    payload = {"uid": int(user_id), "ts": int(time.time())}
+
+    b_payload = base64.urlsafe_b64encode(
+        json.dumps(payload).encode()
+    ).decode()
+
+    signature = hmac.new(
+        CONNECT_SECRET.encode(),
+        b_payload.encode(),
+        hashlib.sha256
+    ).digest()
+
+    b_sig = base64.urlsafe_b64encode(signature).decode()
+
+    return f"{b_payload}.{b_sig}"
 
 
-def create_connect_token(user_id: int) -> str:
-    """Generate a one-time connect token for a user_id."""
-    purge_expired_tokens()
-    token = secrets.token_urlsafe(32)
-    CONNECT_TOKENS[token] = {
-        "user_id": int(user_id),
-        "expires_at": time.time() + CONNECT_TOKEN_TTL
-    }
-    return token
-
-
-def consume_connect_token(token: str):
-    """Return user_id if token valid, and remove token. Otherwise None."""
-    purge_expired_tokens()
-    info = CONNECT_TOKENS.pop(token, None)
-    if not info:
-        return None
-    if info["expires_at"] < time.time():
-        return None
-    return info["user_id"]
-
-
-def run_coro(coro, timeout: int = 10):
-    """Run coroutine in bot's loop in a thread-safe manner and return result."""
+# ---- Token Validator ----
+def validate_signed_token(token: str):
     try:
-        fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
-        return fut.result(timeout)
-    except Exception as e:
-        return {"error": str(e)}
+        b_payload, b_sig = token.split(".")
+        expected_sig = base64.urlsafe_b64encode(
+            hmac.new(CONNECT_SECRET.encode(), b_payload.encode(), hashlib.sha256).digest()
+        ).decode()
 
-# ------------------- Flask route: consume token and set session -------------------
+        if not hmac.compare_digest(b_sig, expected_sig):
+            return None  # forged token
+
+        payload = json.loads(base64.urlsafe_b64decode(b_payload))
+
+        if time.time() - payload["ts"] > CONNECT_TOKEN_TTL:
+            return None  # expired
+
+        return int(payload["uid"])
+    except:
+        return None
+
+
+# ------------------- Discord command: n/connect -------------------
+@bot.command(name="connect")
+async def connect_cmd(ctx):
+    try:
+        token = create_signed_token(ctx.author.id)
+        url = f"{DASHBOARD_URL}/connect?token={token}"
+
+        try:
+            await ctx.author.send(
+                f"🔗 **Nexus Connect**\n"
+                f"Login link:\n{url}\n"
+                f"⏳ Expires in {CONNECT_TOKEN_TTL//60} minutes."
+            )
+            await ctx.send("✅ Check your DMs for your Nexus Connect link.")
+        except:
+            await ctx.send(f"🔗 **Nexus Connect**\n{url}")
+    except Exception as e:
+        await ctx.send(f"⚠️ Error: {e}")
+
+
+# ------------------- Flask: /connect route -------------------
 @app.route("/connect")
 def web_connect():
-    """
-    /connect?token=abc
-    Validates the token, sets Flask session['user_id'], and redirects to dashboard.
-    """
-    try:
-        token = request.args.get("token", None)
-        if not token:
-            return "Missing token", 400
+    token = request.args.get("token")
+    if not token:
+        return "Missing token", 400
 
-        user_id = consume_connect_token(token)
-        if not user_id:
-            return render_template("connect.html", success=False, reason="Invalid or expired token.")
+    user_id = validate_signed_token(token)
+    if not user_id:
+        return render_template("connect.html", success=False, reason="Invalid or expired token.")
 
-        # set session
-        session.clear()
-        session["user_id"] = int(user_id)
-        session["connected_at"] = int(time.time())
+    session.clear()
+    session["user_id"] = user_id
+    session["connected_at"] = int(time.time())
 
-        # redirect to dashboard (or show a short page)
-        return render_template("connect.html", success=True, dashboard_url=url_for("dashboard"))
+    return render_template("connect.html", success=True, dashboard_url=url_for("show_dashboard"))
     except Exception as e:
         return f"Error: {e}", 500
 
@@ -564,34 +575,21 @@ from datetime import datetime, timezone
 bot_start_time = datetime.now(timezone.utc)  # ✅ correct, timezone-aware
 
 # ------------------- Discord command to generate connect link -------------------
-@bot.command(name="connect")
-async def connect_cmd(ctx):
-    """
-    n/connect
-    Generates a one-time login URL for the user to access the web dashboard as themselves.
-    Link expires in CONNECT_TOKEN_TTL seconds.
-    """
-    try:
-        token = create_connect_token(ctx.author.id)
-        url = f"{DASHBOARD_URL}/connect?token={token}"
-        # Try DM first for privacy
-        try:
-            await ctx.author.send(
-                f"🔗 **Nexus Connect**\nClick this link to sign into the dashboard as you:\n{url}\n\n"
-                f"This link expires in {CONNECT_TOKEN_TTL//60} minutes."
-            )
-            await ctx.send("✅ **[I sent you a DM with your connect link.]**")
-        except Exception:
-            # fallback to channel message if DM fails
-            await ctx.send(
-                f"🔗 **Nexus Connect**\nHere is your one-time link (expires in 5 minutes):\n{url}"
-            )
-    except Exception as e:
-        await ctx.send(f"⚠️ **[Failed to create connect link]** {e}")
+@app.route("/connect")
+def web_connect():
+    token = request.args.get("token")
+    if not token:
+        return "Missing token", 400
 
-# ------------------- Helper -----------------------
-def no_perm_msg(action):
-    return f"**❌ [You do not have permission to {action}]**"
+    user_id = validate_signed_token(token)
+    if not user_id:
+        return render_template("connect.html", success=False, reason="Invalid or expired token.")
+
+    session.clear()
+    session["user_id"] = user_id
+    session["connected_at"] = int(time.time())
+
+    return render_template("connect.html", success=True, dashboard_url=url_for("dashboard"))
 
 # ------------------- Events -----------------------
 @bot.event
@@ -620,7 +618,7 @@ async def help_command(ctx):
             "**n/unmute @user** - Unmute a member\n"
             "**n/warn @user <reason>** - Warn a member\n"
             "**n/snipe [0-5] [#channel]** - Retrieve recently deleted messages\n"
-            "**n/clear <amount> [ex:] [images/@user]** - Delete a certain amount of messages"
+            "**n/clear <amount> [ex:] [images/@user]** - Delete a certain amount of messages\n"
             "**n/setupapp #channel <title> - <question> | <question>** - Set questions for applications\n" 
             "**n/openapp [@user]** - Apply for a role or membership\n"
         ), inline=False)
